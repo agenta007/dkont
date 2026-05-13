@@ -193,7 +193,7 @@ public class LogisticsService {
     }
 
     private void seed() {
-        Company company = saveCompany(new Company(0, "Balkan Logistics", "Sofia, 12 Shipka St.", "+359 2 555 0101", "office@balkan-logistics.example"));
+        Company company = saveCompany(new Company(0, "Dkont", "Sofia, 12 Shipka St.", "+359 2 555 0101", "office@dkont.example"));
 
         Office sofia = saveOffice(new Office(0, company.getId(), "Central Office", "Sofia", "12 Shipka St.", "+359 2 555 0102"));
         Office plovdiv = saveOffice(new Office(0, company.getId(), "South Office", "Plovdiv", "44 Maritsa Blvd.", "+359 32 555 010"));

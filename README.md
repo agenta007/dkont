@@ -1,4 +1,4 @@
-# Logistics Company
+# Dkont
 
 Educational web application for managing a logistics company. The system covers clients, employees, offices, shipments, role-based views, automatic shipment pricing, and operational reports.
 

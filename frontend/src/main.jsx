@@ -4,6 +4,7 @@ import {
   BarChart3,
   Building2,
   CheckCircle2,
+  ClipboardCheck,
   ClipboardList,
   PackagePlus,
   RefreshCw,
@@ -26,6 +27,18 @@ const labels = {
   OFFICE_EMPLOYEE: "офис служител",
 };
 
+const checklistTasks = [
+  { id: "backend-models", title: "Entity model and enums", owner: "Daniel Georgiev", area: "Backend" },
+  { id: "backend-api", title: "REST API for clients, employees, offices, shipments, and reports", owner: "Daniel Georgiev", area: "Backend" },
+  { id: "pricing", title: "Shipment price calculation and delivered status workflow", owner: "Daniel Georgiev", area: "Business logic" },
+  { id: "auth-roles", title: "Login, registration, roles, and client shipment visibility", owner: "Stati Kosev", area: "Access control" },
+  { id: "reports", title: "Operational reports and revenue by date range", owner: "Stati Kosev", area: "Reports" },
+  { id: "frontend-shell", title: "React/Vite application shell and navigation", owner: "Samuil Dimov", area: "Frontend" },
+  { id: "frontend-crud", title: "CRUD screens and shipment management interface", owner: "Samuil Dimov", area: "Frontend" },
+  { id: "responsive-ui", title: "Responsive layout, tables, forms, and visual polish", owner: "Samuil Dimov", area: "Frontend" },
+  { id: "testing-docs", title: "Testing, screenshots, README, and final documentation", owner: "Stati Kosev", area: "Documentation" },
+];
+
 const api = async (url, options = {}) => {
   const response = await fetch(url, {
     headers: { "Content-Type": "application/json" },
@@ -37,6 +50,7 @@ const api = async (url, options = {}) => {
 };
 
 function App() {
+  const [path, setPath] = useState(window.location.pathname);
   const [data, setData] = useState(null);
   const [active, setActive] = useState("dashboard");
   const [role, setRole] = useState("ADMIN");
@@ -51,8 +65,25 @@ function App() {
   };
 
   useEffect(() => {
-    load().catch((exception) => setError(exception.message));
+    const handlePopState = () => setPath(window.location.pathname);
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
+
+  useEffect(() => {
+    if (path !== "/checklist") {
+      load().catch((exception) => setError(exception.message));
+    }
+  }, [path]);
+
+  const navigate = (nextPath) => {
+    window.history.pushState({}, "", nextPath);
+    setPath(nextPath);
+  };
+
+  if (path === "/checklist") {
+    return <ChecklistPage onBack={() => navigate("/")} />;
+  }
 
   const visibleShipments = useMemo(() => {
     if (!data) return [];
@@ -94,7 +125,7 @@ function App() {
       <header className="topbar">
         <div>
           <p className="eyebrow">Логистична компания</p>
-          <h1>Balkan Logistics</h1>
+          <h1>Dkont</h1>
         </div>
         <form className="login" onSubmit={handleLogin}>
           <input name="username" defaultValue="admin" aria-label="Потребител" />
@@ -113,6 +144,9 @@ function App() {
                 <Icon size={16} /> {label}
               </button>
             ))}
+            <button onClick={() => navigate("/checklist")}>
+              <ClipboardCheck size={16} /> Checklist
+            </button>
           </nav>
           <div className="role-controls">
             <label>
@@ -142,6 +176,82 @@ function App() {
         {active === "employees" && <Employees data={data} onRefresh={load} />}
         {active === "offices" && <Offices data={data} onRefresh={load} />}
         {active === "reports" && <Reports />}
+      </main>
+    </div>
+  );
+}
+
+function ChecklistPage({ onBack }) {
+  const [completed, setCompleted] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("logistics-checklist") || "{}");
+    } catch {
+      return {};
+    }
+  });
+
+  const toggle = (id) => {
+    setCompleted((current) => {
+      const next = { ...current, [id]: !current[id] };
+      localStorage.setItem("logistics-checklist", JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const doneCount = checklistTasks.filter((task) => completed[task.id]).length;
+  const byOwner = ["Daniel Georgiev", "Stati Kosev", "Samuil Dimov"].map((owner) => {
+    const ownerTasks = checklistTasks.filter((task) => task.owner === owner);
+    const ownerDone = ownerTasks.filter((task) => completed[task.id]).length;
+    return { owner, done: ownerDone, total: ownerTasks.length };
+  });
+
+  return (
+    <div>
+      <header className="topbar">
+        <div>
+          <p className="eyebrow">Project checklist</p>
+          <h1>Developer Tasks</h1>
+        </div>
+        <button className="secondary" onClick={onBack}>Back to app</button>
+      </header>
+
+      <main className="shell checklist-shell">
+        <ViewTitle eyebrow="Progress" title="Completed and remaining work">
+          <div className="metrics">
+            <Metric value={`${doneCount}/${checklistTasks.length}`} label="total completed" />
+            {byOwner.map((item) => (
+              <Metric key={item.owner} value={`${item.done}/${item.total}`} label={item.owner} />
+            ))}
+          </div>
+
+          <div className="checklist-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Task</th>
+                  <th>Area</th>
+                  <th>Developer</th>
+                </tr>
+              </thead>
+              <tbody>
+                {checklistTasks.map((task) => (
+                  <tr key={task.id} className={completed[task.id] ? "completed-row" : ""}>
+                    <td>
+                      <label className="check-toggle">
+                        <input type="checkbox" checked={Boolean(completed[task.id])} onChange={() => toggle(task.id)} />
+                        <span>{completed[task.id] ? "Completed" : "Not completed"}</span>
+                      </label>
+                    </td>
+                    <td>{task.title}</td>
+                    <td>{task.area}</td>
+                    <td>{task.owner}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </ViewTitle>
       </main>
     </div>
   );

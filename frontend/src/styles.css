@@ -54,6 +54,12 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; }
 .actions { display: flex; gap: 8px; }
 .alert { margin-bottom: 14px; padding: 12px 14px; color: oklch(34% 0.12 30); }
 .loading { padding: 40px; }
+.checklist-shell { max-width: 1180px; margin: 0 auto; }
+.checklist-table { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; }
+.completed-row td { color: var(--muted); background: oklch(97% 0.012 155); }
+.completed-row td:nth-child(2) { text-decoration: line-through; }
+.check-toggle { display: inline-flex; grid-template-columns: none; align-items: center; gap: 10px; min-width: 150px; color: var(--text); font-weight: 800; }
+.check-toggle input { width: 18px; height: 18px; min-height: 18px; accent-color: var(--accent); }
 
 @media (max-width: 900px) {
   .topbar, .section-heading { flex-direction: column; align-items: stretch; }
