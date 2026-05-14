@@ -1,9 +1,20 @@
 package com.example.logistics.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+@Entity
 public class Shipment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     private long senderClientId;
     private long receiverClientId;
@@ -13,8 +24,13 @@ public class Shipment {
     private Long destinationOfficeId;
     private String deliveryAddress;
     private double weight;
+    @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private DeliveryType deliveryType;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private ShipmentStatus status;
     private LocalDate sentDate;
     private LocalDate receivedDate;

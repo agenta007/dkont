@@ -6,7 +6,7 @@ Educational web application for managing a logistics company. The system covers 
 
 - Backend: Java 21, Spring Boot 3.5, Spring MVC REST API
 - Frontend: React, JSX, Vite
-- Data storage: in-memory seed data for simple local execution
+- Data storage: PostgreSQL through Spring Data JPA
 - Build tools: Maven and npm
 
 ## Requirements
@@ -17,6 +17,7 @@ Install these before running the project:
 - Maven 3.9+
 - Node.js 20+ or newer
 - npm
+- Docker, if you want to run PostgreSQL with the included compose file
 
 Check your versions:
 
@@ -41,6 +42,20 @@ npm install
 The backend dependencies are downloaded automatically by Maven when you run or test the backend.
 
 ## Running The Application
+
+Use one of these PostgreSQL setup options:
+
+Option 1: connect to an existing PostgreSQL instance on the host OS. Follow the command list in:
+
+```text
+database/admin-command-list.txt
+```
+
+Option 2: start PostgreSQL with Docker from the project root:
+
+```bash
+docker compose -f database/docker-compose.yml up -d
+```
 
 Start the backend API from the project root:
 
@@ -67,6 +82,20 @@ The Vite dev server proxies `/api` requests to:
 http://127.0.0.1:8082
 ```
 
+The backend defaults to:
+
+```text
+DATABASE_URL=jdbc:postgresql://localhost:5432/dkont
+DATABASE_USERNAME=dkont
+DATABASE_PASSWORD=dkont
+SKIP_AUTHORIZATION_ON_LOCALHOST=false
+ADMIN_API_TOKEN=
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin
+```
+
+Override those environment variables for another PostgreSQL database.
+
 ## Demo Login
 
 Seeded users:
@@ -82,6 +111,45 @@ stella / demo
 
 You can also switch roles from the UI to inspect admin, employee, and client behavior.
 
+Development seeds the administrator as `admin / admin`.
+
+Production profile seeds the administrator as:
+
+```text
+admin / 5vbwGBIp4vVX5g8ft89erjloPCokOUM4H9muU5dgQv2tFkaph3fHsq5mjQUeslIk
+```
+
+Use `ADMIN_USERNAME` and `ADMIN_PASSWORD` environment variables to override either profile before the database is seeded.
+
+## Admin API Scripts
+
+Start the backend, then run administrative user scripts from the project root:
+
+```bash
+scripts/admin/list-users.sh
+scripts/admin/add-user.sh petar demo petar@example.test EMPLOYEE
+scripts/admin/change-role.sh maria ADMIN
+scripts/admin/remove-user.sh stella
+```
+
+Available roles are `ADMIN`, `EMPLOYEE`, and `CLIENT`.
+
+The scripts call the backend API at `http://localhost:8082` by default. Override with `API_BASE_URL`:
+
+```bash
+API_BASE_URL=http://localhost:9000 scripts/admin/list-users.sh
+```
+
+For local development, set `SKIP_AUTHORIZATION_ON_LOCALHOST=true` before starting the backend to allow admin API calls from localhost without a token:
+
+```bash
+SKIP_AUTHORIZATION_ON_LOCALHOST=true mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8082
+```
+
+For non-localhost requests, set `ADMIN_API_TOKEN` on the backend and pass the same environment variable when running scripts. The scripts send it as the `X-Admin-Token` header.
+
+Admin changes are persisted in PostgreSQL.
+
 ## Testing
 
 Run backend tests:
@@ -95,6 +163,13 @@ Build the frontend:
 ```bash
 cd frontend
 npm run build
+```
+
+Build the frontend for production without developer pages (`/checklist`, `/assignment`, `/documentation`):
+
+```bash
+cd frontend
+npm run build:prod
 ```
 
 ## Main Features
@@ -113,6 +188,10 @@ npm run build
 - `GET /api/snapshot`
 - `POST /api/login`
 - `POST /api/register`
+- `GET /api/admin/users`
+- `POST /api/admin/users`
+- `PATCH /api/admin/users/{username}/role`
+- `DELETE /api/admin/users/{username}`
 - `GET /api/shipments?role=CLIENT&clientId=1`
 - `GET /api/reports?from=2026-05-01&to=2026-05-13`
 - `POST /api/clients`
@@ -127,8 +206,15 @@ npm run build
 ```text
 .
 ├── pom.xml
+├── database/
+│   ├── docker-compose.yml
+│   └── README.md
 ├── src/
 │   ├── main/java/com/example/logistics/
+│   │   ├── controller/
+│   │   ├── service/
+│   │   ├── repository/
+│   │   └── model/
 │   └── test/java/com/example/logistics/
 ├── frontend/
 │   ├── package.json
@@ -148,6 +234,9 @@ Generated files are ignored:
 
 Do not commit generated build output or installed dependencies.
 
-## Notes
+## Architecture Layers
 
-The current backend uses an in-memory repository so the project can run without MySQL or PostgreSQL. A production version should replace `LogisticsService` storage with JPA repositories and a real database configuration.
+- Controller layer: `src/main/java/com/example/logistics/controller`
+- Service layer: `src/main/java/com/example/logistics/service`
+- Repository layer: `src/main/java/com/example/logistics/repository`
+- Database: `database/` plus `src/main/resources/application.properties`

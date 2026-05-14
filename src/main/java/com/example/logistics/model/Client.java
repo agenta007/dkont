@@ -1,9 +1,21 @@
 package com.example.logistics.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+
+@Entity
 public class Client {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     private long userId;
+    private long companyId;
+    @Column(nullable = false)
     private String firstName;
+    @Column(nullable = false)
     private String lastName;
     private String phone;
     private String email;
@@ -12,9 +24,10 @@ public class Client {
     public Client() {
     }
 
-    public Client(long id, long userId, String firstName, String lastName, String phone, String email, String address) {
+    public Client(long id, long userId, long companyId, String firstName, String lastName, String phone, String email, String address) {
         this.id = id;
         this.userId = userId;
+        this.companyId = companyId;
         this.firstName = firstName;
         this.lastName = lastName;
         this.phone = phone;
@@ -26,6 +39,8 @@ public class Client {
     public void setId(long id) { this.id = id; }
     public long getUserId() { return userId; }
     public void setUserId(long userId) { this.userId = userId; }
+    public long getCompanyId() { return companyId; }
+    public void setCompanyId(long companyId) { this.companyId = companyId; }
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }
     public String getLastName() { return lastName; }
