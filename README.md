@@ -34,7 +34,7 @@ Clone the repository, then install the frontend dependencies:
 
 ```bash
 git clone <repository-url>
-cd codex
+cd dkont
 cd frontend
 npm install
 ```

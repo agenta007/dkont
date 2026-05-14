@@ -1,41 +1,48 @@
 package com.example.logistics.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
+@Table(name = "company")
 public class Company {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-    @Column(nullable = false)
+    private Long id;
+
+    @Column(nullable = false, unique = true)
     private String name;
-    private String address;
-    private String phone;
-    private String email;
 
-    public Company() {
-    }
+    @Column(name = "base_price_per_kg", nullable = false, precision = 10, scale = 2)
+    private BigDecimal basePricePerKg;
 
-    public Company(long id, String name, String address, String phone, String email) {
-        this.id = id;
-        this.name = name;
-        this.address = address;
-        this.phone = phone;
-        this.email = email;
-    }
+    @Column(name = "address_surcharge", nullable = false, precision = 10, scale = 2)
+    private BigDecimal addressSurcharge;
 
-    public long getId() { return id; }
-    public void setId(long id) { this.id = id; }
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+    private List<Office> offices;
+
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+    private List<Employee> employees;
+
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+    private List<Shipment> shipments;
+
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public BigDecimal getBasePricePerKg() { return basePricePerKg; }
+    public void setBasePricePerKg(BigDecimal basePricePerKg) { this.basePricePerKg = basePricePerKg; }
+    public BigDecimal getAddressSurcharge() { return addressSurcharge; }
+    public void setAddressSurcharge(BigDecimal addressSurcharge) { this.addressSurcharge = addressSurcharge; }
+    public List<Office> getOffices() { return offices; }
+    public void setOffices(List<Office> offices) { this.offices = offices; }
+    public List<Employee> getEmployees() { return employees; }
+    public void setEmployees(List<Employee> employees) { this.employees = employees; }
+    public List<Shipment> getShipments() { return shipments; }
+    public void setShipments(List<Shipment> shipments) { this.shipments = shipments; }
 }

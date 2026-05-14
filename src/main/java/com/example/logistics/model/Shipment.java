@@ -1,69 +1,89 @@
 package com.example.logistics.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-
+import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "shipment")
 public class Shipment {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-    private long senderClientId;
-    private long receiverClientId;
-    private long registeredByEmployeeId;
-    private Long courierId;
-    private Long sourceOfficeId;
-    private Long destinationOfficeId;
-    private String deliveryAddress;
-    private double weight;
-    @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal price;
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sender_id", nullable = false)
+    private Client sender;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recipient_id", nullable = false)
+    private Client recipient;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "registered_by_id", nullable = false)
+    private Employee registeredBy;
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "delivery_type", nullable = false)
     private DeliveryType deliveryType;
+
+    @Column(name = "delivery_address")
+    private String deliveryAddress;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "destination_office_id")
+    private Office destinationOffice;
+
+    @Column(nullable = false, precision = 10, scale = 3)
+    private BigDecimal weight;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ShipmentStatus status;
-    private LocalDate sentDate;
-    private LocalDate receivedDate;
 
-    public Shipment() {
+    @Column(name = "registered_at", nullable = false, updatable = false)
+    private LocalDateTime registeredAt;
+
+    @Column(name = "delivered_at")
+    private LocalDateTime deliveredAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.registeredAt = LocalDateTime.now();
+        this.status = ShipmentStatus.REGISTERED;
     }
 
-    public long getId() { return id; }
-    public void setId(long id) { this.id = id; }
-    public long getSenderClientId() { return senderClientId; }
-    public void setSenderClientId(long senderClientId) { this.senderClientId = senderClientId; }
-    public long getReceiverClientId() { return receiverClientId; }
-    public void setReceiverClientId(long receiverClientId) { this.receiverClientId = receiverClientId; }
-    public long getRegisteredByEmployeeId() { return registeredByEmployeeId; }
-    public void setRegisteredByEmployeeId(long registeredByEmployeeId) { this.registeredByEmployeeId = registeredByEmployeeId; }
-    public Long getCourierId() { return courierId; }
-    public void setCourierId(Long courierId) { this.courierId = courierId; }
-    public Long getSourceOfficeId() { return sourceOfficeId; }
-    public void setSourceOfficeId(Long sourceOfficeId) { this.sourceOfficeId = sourceOfficeId; }
-    public Long getDestinationOfficeId() { return destinationOfficeId; }
-    public void setDestinationOfficeId(Long destinationOfficeId) { this.destinationOfficeId = destinationOfficeId; }
-    public String getDeliveryAddress() { return deliveryAddress; }
-    public void setDeliveryAddress(String deliveryAddress) { this.deliveryAddress = deliveryAddress; }
-    public double getWeight() { return weight; }
-    public void setWeight(double weight) { this.weight = weight; }
-    public BigDecimal getPrice() { return price; }
-    public void setPrice(BigDecimal price) { this.price = price; }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public Company getCompany() { return company; }
+    public void setCompany(Company company) { this.company = company; }
+    public Client getSender() { return sender; }
+    public void setSender(Client sender) { this.sender = sender; }
+    public Client getRecipient() { return recipient; }
+    public void setRecipient(Client recipient) { this.recipient = recipient; }
+    public Employee getRegisteredBy() { return registeredBy; }
+    public void setRegisteredBy(Employee registeredBy) { this.registeredBy = registeredBy; }
     public DeliveryType getDeliveryType() { return deliveryType; }
     public void setDeliveryType(DeliveryType deliveryType) { this.deliveryType = deliveryType; }
+    public String getDeliveryAddress() { return deliveryAddress; }
+    public void setDeliveryAddress(String deliveryAddress) { this.deliveryAddress = deliveryAddress; }
+    public Office getDestinationOffice() { return destinationOffice; }
+    public void setDestinationOffice(Office destinationOffice) { this.destinationOffice = destinationOffice; }
+    public BigDecimal getWeight() { return weight; }
+    public void setWeight(BigDecimal weight) { this.weight = weight; }
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
     public ShipmentStatus getStatus() { return status; }
     public void setStatus(ShipmentStatus status) { this.status = status; }
-    public LocalDate getSentDate() { return sentDate; }
-    public void setSentDate(LocalDate sentDate) { this.sentDate = sentDate; }
-    public LocalDate getReceivedDate() { return receivedDate; }
-    public void setReceivedDate(LocalDate receivedDate) { this.receivedDate = receivedDate; }
+    public LocalDateTime getRegisteredAt() { return registeredAt; }
+    public LocalDateTime getDeliveredAt() { return deliveredAt; }
+    public void setDeliveredAt(LocalDateTime deliveredAt) { this.deliveredAt = deliveredAt; }
 }

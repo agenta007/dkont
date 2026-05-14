@@ -1,54 +1,45 @@
 package com.example.logistics.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+import java.util.List;
 
 @Entity
+@Table(name = "employee")
 public class Employee {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-    private long userId;
-    private long companyId;
-    private long officeId;
-    @Column(nullable = false)
-    private String firstName;
-    @Column(nullable = false)
-    private String lastName;
+    private Long id;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "office_id")
+    private Office office;
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "employee_type", nullable = false)
     private EmployeeType employeeType;
 
-    public Employee() {
-    }
+    @OneToMany(mappedBy = "registeredBy")
+    private List<Shipment> registeredShipments;
 
-    public Employee(long id, long userId, long companyId, long officeId, String firstName, String lastName, EmployeeType employeeType) {
-        this.id = id;
-        this.userId = userId;
-        this.companyId = companyId;
-        this.officeId = officeId;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.employeeType = employeeType;
-    }
-
-    public long getId() { return id; }
-    public void setId(long id) { this.id = id; }
-    public long getUserId() { return userId; }
-    public void setUserId(long userId) { this.userId = userId; }
-    public long getCompanyId() { return companyId; }
-    public void setCompanyId(long companyId) { this.companyId = companyId; }
-    public long getOfficeId() { return officeId; }
-    public void setOfficeId(long officeId) { this.officeId = officeId; }
-    public String getFirstName() { return firstName; }
-    public void setFirstName(String firstName) { this.firstName = firstName; }
-    public String getLastName() { return lastName; }
-    public void setLastName(String lastName) { this.lastName = lastName; }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+    public Company getCompany() { return company; }
+    public void setCompany(Company company) { this.company = company; }
+    public Office getOffice() { return office; }
+    public void setOffice(Office office) { this.office = office; }
     public EmployeeType getEmployeeType() { return employeeType; }
     public void setEmployeeType(EmployeeType employeeType) { this.employeeType = employeeType; }
+    public List<Shipment> getRegisteredShipments() { return registeredShipments; }
+    public void setRegisteredShipments(List<Shipment> registeredShipments) { this.registeredShipments = registeredShipments; }
 }
