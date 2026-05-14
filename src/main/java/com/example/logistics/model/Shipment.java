@@ -1,8 +1,6 @@
 package com.example.logistics.model;
 
 import jakarta.persistence.*;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "shipment")
@@ -40,24 +38,24 @@ public class Shipment {
     private Office destinationOffice;
 
     @Column(nullable = false, precision = 10, scale = 3)
-    private BigDecimal weight;
+    private java.math.BigDecimal weight;
 
     @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal price;
+    private java.math.BigDecimal price;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ShipmentStatus status;
 
     @Column(name = "registered_at", nullable = false, updatable = false)
-    private LocalDateTime registeredAt;
+    private java.time.LocalDateTime registeredAt;
 
     @Column(name = "delivered_at")
-    private LocalDateTime deliveredAt;
+    private java.time.LocalDateTime deliveredAt;
 
     @PrePersist
     protected void onCreate() {
-        this.registeredAt = LocalDateTime.now();
+        this.registeredAt = java.time.LocalDateTime.now();
         this.status = ShipmentStatus.REGISTERED;
     }
 
@@ -77,13 +75,13 @@ public class Shipment {
     public void setDeliveryAddress(String deliveryAddress) { this.deliveryAddress = deliveryAddress; }
     public Office getDestinationOffice() { return destinationOffice; }
     public void setDestinationOffice(Office destinationOffice) { this.destinationOffice = destinationOffice; }
-    public BigDecimal getWeight() { return weight; }
-    public void setWeight(BigDecimal weight) { this.weight = weight; }
-    public BigDecimal getPrice() { return price; }
-    public void setPrice(BigDecimal price) { this.price = price; }
+    public java.math.BigDecimal getWeight() { return weight; }
+    public void setWeight(java.math.BigDecimal weight) { this.weight = weight; }
+    public java.math.BigDecimal getPrice() { return price; }
+    public void setPrice(java.math.BigDecimal price) { this.price = price; }
     public ShipmentStatus getStatus() { return status; }
     public void setStatus(ShipmentStatus status) { this.status = status; }
-    public LocalDateTime getRegisteredAt() { return registeredAt; }
-    public LocalDateTime getDeliveredAt() { return deliveredAt; }
-    public void setDeliveredAt(LocalDateTime deliveredAt) { this.deliveredAt = deliveredAt; }
+    public java.time.LocalDateTime getRegisteredAt() { return registeredAt; }
+    public java.time.LocalDateTime getDeliveredAt() { return deliveredAt; }
+    public void setDeliveredAt(java.time.LocalDateTime deliveredAt) { this.deliveredAt = deliveredAt; }
 }
