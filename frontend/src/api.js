@@ -33,7 +33,12 @@ export const api = async (url, options = {}) => {
     offlineError.cause = error;
     throw offlineError;
   }
-  if (!response.ok) throw new Error(await response.text());
+  if (!response.ok) {
+    const text = await response.text();
+    let message = text;
+    try { const j = JSON.parse(text); message = j.message || j.error || text; } catch {}
+    throw new Error(message);
+  }
   if (response.status === 204) return null;
   return response.json();
 };

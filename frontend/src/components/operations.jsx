@@ -194,10 +194,10 @@ export function Companies({ data, onRefresh }) {
         eyebrow={t("companies.eyebrow")}
         title={t("companies.title")}
         endpoint="companies"
-        fields={["name", "address", "phone", "email"]}
+        fields={["name", "basePricePerKg", "addressSurcharge"]}
         data={data.companies}
         onRefresh={onRefresh}
-        renderRow={(company) => [company.name, company.address, company.phone, company.email]}
+        renderRow={(company) => [company.name, `${Number(company.basePricePerKg).toFixed(2)} лв./кг`, `${Number(company.addressSurcharge).toFixed(2)} лв.`]}
         addLabel={t("companies.add")}
         addSuccess={t("companies.addSuccess")}
         addError={(err) => t("companies.addError", { error: err.message })}

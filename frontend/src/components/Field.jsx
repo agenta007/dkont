@@ -23,6 +23,11 @@ export function Field({ field }) {
     officeId: t("fields.officeId"),
     name: t("fields.name"),
     city: t("fields.city"),
+    basePricePerKg: t("fields.basePricePerKg"),
+    addressSurcharge: t("fields.addressSurcharge"),
   };
-  return <label>{labelsByField[field] ?? field}<input name={field} type={field.endsWith("Id") ? "number" : field === "email" ? "email" : "text"} required /></label>;
+  const numericFields = new Set(["basePricePerKg", "addressSurcharge"]);
+  const type = field.endsWith("Id") || numericFields.has(field) ? "number" : field === "email" ? "email" : "text";
+  const extraProps = numericFields.has(field) ? { step: "0.01", min: "0" } : {};
+  return <label>{labelsByField[field] ?? field}<input name={field} type={type} required {...extraProps} /></label>;
 }
