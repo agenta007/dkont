@@ -1,0 +1,114 @@
+export const API_ENDPOINTS = {
+  auth: {
+    login: "/api/auth/login",
+    register: "/api/auth/register",
+  },
+  checklist: {
+    state: "/api/developer/checklist-state",
+  },
+  resources: {
+    companies: "/api/company",
+    clients: "/api/client",
+    employees: "/api/employee",
+    offices: "/api/office",
+    shipments: "/api/shipment",
+    users: "/api/user",
+  },
+};
+
+const endpointFor = (resource) => {
+  const endpoint = API_ENDPOINTS.resources[resource];
+  if (!endpoint) throw new Error(`Unknown API resource: ${resource}`);
+  return endpoint;
+};
+
+export const api = async (url, options = {}) => {
+  let response;
+  try {
+    response = await fetch(url, {
+      headers: { "Content-Type": "application/json" },
+      ...options,
+    });
+  } catch (error) {
+    const offlineError = new Error("Server offline or unreachable");
+    offlineError.code = "SERVER_UNREACHABLE";
+    offlineError.cause = error;
+    throw offlineError;
+  }
+  if (!response.ok) throw new Error(await response.text());
+  if (response.status === 204) return null;
+  return response.json();
+};
+
+export const getSnapshot = async () => {
+  const [companies, clients, employees, offices, shipments, users] = await Promise.all([
+    listResource("companies"),
+    listResource("clients"),
+    listResource("employees"),
+    listResource("offices"),
+    listResource("shipments"),
+    listResource("users"),
+  ]);
+  return { companies, clients, employees, offices, shipments, users };
+};
+
+export const listResource = async (resource) => {
+  try {
+    return await api(endpointFor(resource));
+  } catch (error) {
+    console.warn(`Could not load ${resource}`, error);
+    return [];
+  }
+};
+
+export const login = (payload) => api(withParams(API_ENDPOINTS.auth.login, payload), { method: "POST" });
+
+export const registerClient = (payload) => api(withParams(API_ENDPOINTS.auth.register, payload), { method: "POST" });
+
+export const getChecklistState = () => api(API_ENDPOINTS.checklist.state);
+
+export const updateChecklistState = (state) => api(API_ENDPOINTS.checklist.state, {
+  method: "PUT",
+  body: JSON.stringify(state),
+});
+
+export const createShipment = (shipment) => api(API_ENDPOINTS.resources.shipments, {
+  method: "POST",
+  body: JSON.stringify(shipment),
+});
+
+export const deliverShipment = (id) => api(`${API_ENDPOINTS.resources.shipments}/${id}/deliver`, {
+  method: "PUT",
+});
+
+export const deleteShipment = (id) => deleteResource("shipments", id);
+
+export const createUser = (user) => createResource("users", user);
+
+export const createEmployee = (employee) => createResource("employees", employee);
+
+export const deleteEmployee = (id) => deleteResource("employees", id);
+
+export const changeUserRole = (userId, role) =>
+  api(`${API_ENDPOINTS.resources.users}/${userId}/role?role=${role}`, { method: "PUT" });
+
+export const getGpsPositions = () => api("/api/gps");
+
+export const postGpsPosition = (employeeId, lat, lng) => api(`/api/gps/${employeeId}`, {
+  method: "POST",
+  body: JSON.stringify({ employeeId, lat, lng }),
+});
+
+export const createResource = (resource, payload) => api(endpointFor(resource), {
+  method: "POST",
+  body: JSON.stringify(payload),
+});
+
+export const deleteResource = (resource, id) => api(`${endpointFor(resource)}/${id}`, {
+  method: "DELETE",
+});
+
+const withParams = (url, params) => {
+  const query = new URLSearchParams(params).toString();
+  return query ? `${url}?${query}` : url;
+};
