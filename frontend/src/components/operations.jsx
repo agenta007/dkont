@@ -3,7 +3,13 @@ import { PackagePlus, RefreshCw } from "lucide-react";
 import { changeUserRole, createEmployee, createResource, createShipment, createUser, deleteEmployee, deleteResource, deleteShipment, deliverShipment } from "../api.js";
 import { labels } from "../constants.js";
 import { clientName, fullName, numericForm, officeName } from "../utils/logistics.js";
-import { Field, IconButton, Info, Metric, SearchableSelect, Select, ViewTitle } from "./shared.jsx";
+import { Field } from "./Field.jsx";
+import { IconButton } from "./IconButton.jsx";
+import { Info } from "./Info.jsx";
+import { Metric } from "./Metric.jsx";
+import { OverlayNotification, useOverlayNotification } from "./OverlayNotification.jsx";
+import { SearchableSelect, Select } from "./Select.jsx";
+import { ViewTitle } from "./ViewTitle.jsx";
 
 export function Dashboard({ data, visibleShipments, currentClient, currentOffice, session, onRefresh }) {
   const open = visibleShipments.filter((shipment) => !["DELIVERED", "CANCELLED"].includes(shipment.status));
@@ -187,6 +193,7 @@ export function Clients({ data, selectedCompanyId, onRefresh }) {
 
 export function Employees({ data, selectedCompanyId, onRefresh }) {
   const [workerCompanyId, setWorkerCompanyId] = useState(Number(selectedCompanyId) || data.companies[0]?.id || "");
+  const { message: roleToast, notify: showToast } = useOverlayNotification();
   const companyOffices = data.offices.filter((office) => office.companyId === Number(workerCompanyId));
 
   const submit = async (event) => {
@@ -217,6 +224,7 @@ export function Employees({ data, selectedCompanyId, onRefresh }) {
 
   return (
     <ViewTitle eyebrow="Регистър" title="Служители">
+      <OverlayNotification message={roleToast} />
       <div className="split" style={{ gridTemplateColumns: "1fr" }}>
         <form className="form-grid panel" onSubmit={submit}>
           <label>
@@ -265,6 +273,7 @@ export function Employees({ data, selectedCompanyId, onRefresh }) {
                         onChange={async (e) => {
                           await changeUserRole(employee.userId, e.target.value);
                           await onRefresh();
+                          showToast(`Ролята на ${fullName(employee)} е обновена.`);
                         }}
                       >
                         <option value="ADMIN">Администратор</option>

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { checklistTasks } from "../data/checklistTasks.js";
 import { DeveloperHeader } from "../components/DeveloperHeader.jsx";
-import { Metric, ViewTitle } from "../components/shared.jsx";
+import { Metric } from "../components/Metric.jsx";
+import { ViewTitle } from "../components/ViewTitle.jsx";
 import { getChecklistState, updateChecklistState } from "../api.js";
 
 export function ChecklistPage() {

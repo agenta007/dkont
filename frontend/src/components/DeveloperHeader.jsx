@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { BrandHeader } from "./shared.jsx";
+import { BrandHeader } from "./BrandHeader.jsx";
 
 export function DeveloperHeader({ title }) {
   const navigate = useNavigate();

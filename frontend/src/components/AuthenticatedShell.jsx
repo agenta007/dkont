@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { labels } from "../constants.js";
 import { fullName } from "../utils/logistics.js";
-import { BrandHeader } from "./shared.jsx";
+import { BrandHeader } from "./BrandHeader.jsx";
 
 //shared layout wrapper for every logged-in user view.
 export function AuthenticatedShell({ active,

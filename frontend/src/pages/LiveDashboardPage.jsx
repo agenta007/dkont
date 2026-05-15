@@ -4,7 +4,8 @@ import { Protocol } from "pmtiles";
 import { ArrowLeft, Building2, Expand, MapPin, PackageCheck, PackageSearch, Play, Radar, Square, Truck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { officeName } from "../utils/logistics.js";
-import { BrandHeader, Metric } from "../components/shared.jsx";
+import { BrandHeader } from "../components/BrandHeader.jsx";
+import { Metric } from "../components/Metric.jsx";
 import { getGpsPositions, postGpsPosition } from "../api.js";
 
 const BULGARIA_CENTER = [25.4858, 42.7339];

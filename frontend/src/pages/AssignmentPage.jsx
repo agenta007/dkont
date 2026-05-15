@@ -1,5 +1,5 @@
 import { DeveloperHeader } from "../components/DeveloperHeader.jsx";
-import { ViewTitle } from "../components/shared.jsx";
+import { ViewTitle } from "../components/ViewTitle.jsx";
 import { assignmentDocuments } from "../data/assignmentDocuments.js";
 
 export function AssignmentPage() {
