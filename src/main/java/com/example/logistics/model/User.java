@@ -3,7 +3,7 @@ package com.example.logistics.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-
+//login identity
 @Entity
 @Table(name = "users")
 public class User {
@@ -18,7 +18,7 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true)
     private String email;
 
     @Column(name = "first_name", nullable = false)

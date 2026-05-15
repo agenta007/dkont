@@ -18,6 +18,8 @@ public class Client {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private User user;
 
+    private String phone;
+
     @OneToMany(mappedBy = "sender")
     @JsonIgnore
     private List<Shipment> sentShipments;
@@ -38,4 +40,6 @@ public class Client {
     public void setSentShipments(List<Shipment> sentShipments) { this.sentShipments = sentShipments; }
     public List<Shipment> getReceivedShipments() { return receivedShipments; }
     public void setReceivedShipments(List<Shipment> receivedShipments) { this.receivedShipments = receivedShipments; }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 }
