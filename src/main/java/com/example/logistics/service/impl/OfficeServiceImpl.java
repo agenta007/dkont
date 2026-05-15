@@ -1,6 +1,7 @@
 package com.example.logistics.service.impl;
 
 import com.example.logistics.model.Office;
+import com.example.logistics.repo.CompanyRepository;
 import com.example.logistics.repo.OfficeRepository;
 import com.example.logistics.service.OfficeService;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import java.util.List;
 public class OfficeServiceImpl implements OfficeService {
 
     private final OfficeRepository officeRepository;
+    private final CompanyRepository companyRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -41,6 +43,11 @@ public class OfficeServiceImpl implements OfficeService {
         if (office.getCity() == null || office.getCity().isBlank()) {
             throw new IllegalArgumentException("Office city is required");
         }
+        if (office.getCompany() == null || office.getCompany().getId() == null) {
+            throw new IllegalArgumentException("Company is required");
+        }
+        office.setCompany(companyRepository.findById(office.getCompany().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + office.getCompany().getId())));
         return officeRepository.save(office);
     }
 

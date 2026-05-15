@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getSnapshot, login } from "./api.js";
 import { showDeveloperArea } from "./constants.js";
 import { AuthenticatedApp } from "./components/AuthenticatedApp.jsx";
@@ -19,6 +20,7 @@ export function App() {
 
 function AppRoutes() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [data, setData] = useState(null);
   const [active, setActive] = useState("dashboard");
   const [role, setRole] = useState("ADMIN");
@@ -115,7 +117,7 @@ function AppRoutes() {
           session && data ? (
             <LiveDashboardPage data={data} session={session} />
           ) : session ? (
-            <main className="loading">Зареждане...</main>
+            <main className="loading">{t("common.loading")}</main>
           ) : (
             <LoginPage error={error} serverOffline={serverOffline} onDismissOffline={() => setServerOffline(false)} onLogin={handleLogin} />
           )
@@ -143,7 +145,7 @@ function AppRoutes() {
               visibleShipments={visibleShipments}
             />
           ) : session ? (
-            <main className="loading">Зареждане...</main>
+            <main className="loading">{t("common.loading")}</main>
           ) : (
             <LoginPage error={error} serverOffline={serverOffline} onDismissOffline={() => setServerOffline(false)} onLogin={handleLogin} />
           )

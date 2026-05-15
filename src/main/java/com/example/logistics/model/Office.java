@@ -15,7 +15,6 @@ public class Office {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Company company;
 
     @Column(nullable = false)
@@ -27,16 +26,16 @@ public class Office {
     private String phone;
 
     @OneToMany(mappedBy = "office")
-    @JsonIgnore
     private List<Employee> employees;
 
     @OneToMany(mappedBy = "destinationOffice")
-    @JsonIgnore
     private List<Shipment> incomingShipments;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    @JsonIgnore
     public Company getCompany() { return company; }
+    @JsonProperty
     public void setCompany(Company company) { this.company = company; }
     public Long getCompanyId() { return company == null ? null : company.getId(); }
     public String getAddress() { return address; }
@@ -45,8 +44,10 @@ public class Office {
     public void setCity(String city) { this.city = city; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+    @JsonIgnore
     public List<Employee> getEmployees() { return employees; }
     public void setEmployees(List<Employee> employees) { this.employees = employees; }
+    @JsonIgnore
     public List<Shipment> getIncomingShipments() { return incomingShipments; }
     public void setIncomingShipments(List<Shipment> incomingShipments) { this.incomingShipments = incomingShipments; }
 }

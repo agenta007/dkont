@@ -23,15 +23,12 @@ public class Company {
     private BigDecimal addressSurcharge;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
-    @JsonIgnore
     private List<Office> offices;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
-    @JsonIgnore
     private List<Employee> employees;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
-    @JsonIgnore
     private List<Shipment> shipments;
 
     // Getters and Setters
@@ -43,10 +40,13 @@ public class Company {
     public void setBasePricePerKg(BigDecimal basePricePerKg) { this.basePricePerKg = basePricePerKg; }
     public BigDecimal getAddressSurcharge() { return addressSurcharge; }
     public void setAddressSurcharge(BigDecimal addressSurcharge) { this.addressSurcharge = addressSurcharge; }
+    @JsonIgnore
     public List<Office> getOffices() { return offices; }
     public void setOffices(List<Office> offices) { this.offices = offices; }
+    @JsonIgnore
     public List<Employee> getEmployees() { return employees; }
     public void setEmployees(List<Employee> employees) { this.employees = employees; }
+    @JsonIgnore
     public List<Shipment> getShipments() { return shipments; }
     public void setShipments(List<Shipment> shipments) { this.shipments = shipments; }
 }

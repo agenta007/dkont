@@ -3,6 +3,10 @@ package com.example.logistics.service.impl;
 import com.example.logistics.model.DeliveryType;
 import com.example.logistics.model.Shipment;
 import com.example.logistics.model.ShipmentStatus;
+import com.example.logistics.repo.ClientRepository;
+import com.example.logistics.repo.CompanyRepository;
+import com.example.logistics.repo.EmployeeRepository;
+import com.example.logistics.repo.OfficeRepository;
 import com.example.logistics.repo.ShipmentRepository;
 import com.example.logistics.service.ShipmentService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +23,10 @@ import java.util.List;
 public class ShipmentServiceImpl implements ShipmentService {
 
     private final ShipmentRepository shipmentRepository;
+    private final CompanyRepository companyRepository;
+    private final ClientRepository clientRepository;
+    private final EmployeeRepository employeeRepository;
+    private final OfficeRepository officeRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -80,6 +88,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         if (shipment.getDeliveryType() == DeliveryType.TO_OFFICE && shipment.getDestinationOffice() == null) {
             throw new IllegalArgumentException("Destination office is required for TO_OFFICE shipments");
         }
+        attachRelations(shipment);
         shipment.setPrice(calculatePrice(shipment));
         return shipmentRepository.save(shipment);
     }
@@ -134,6 +143,23 @@ public class ShipmentServiceImpl implements ShipmentService {
     @Transactional(readOnly = true)
     public List<Shipment> getShipmentsByDateRange(Long companyId, LocalDateTime from, LocalDateTime to) {
         return shipmentRepository.findByCompanyIdAndDateRange(companyId, from, to);
+    }
+
+    private void attachRelations(Shipment shipment) {
+        if (shipment.getCompany() != null && shipment.getCompany().getId() != null) {
+            shipment.setCompany(companyRepository.findById(shipment.getCompany().getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + shipment.getCompany().getId())));
+        }
+        shipment.setSender(clientRepository.findById(shipment.getSender().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Sender not found")));
+        shipment.setRecipient(clientRepository.findById(shipment.getRecipient().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Recipient not found")));
+        shipment.setRegisteredBy(employeeRepository.findById(shipment.getRegisteredBy().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Employee not found")));
+        if (shipment.getDestinationOffice() != null && shipment.getDestinationOffice().getId() != null) {
+            shipment.setDestinationOffice(officeRepository.findById(shipment.getDestinationOffice().getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Office not found")));
+        }
     }
 
     private BigDecimal calculatePrice(Shipment shipment) {

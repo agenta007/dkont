@@ -7,7 +7,10 @@ export function numericForm(form) {
 }
 
 export function fullName(item) {
-  return `${item.firstName} ${item.lastName}`;
+  const first = item.firstName?.trim() ?? "";
+  const last = item.lastName?.trim() ?? "";
+  const name = `${first} ${last}`.trim();
+  return name || item.username || item.email || `#${item.id}`;
 }
 
 export function clientName(data, id) {

@@ -9,21 +9,6 @@ set -euo pipefail
 # Optional environment:
 #   API_BASE_URL=http://localhost:8082
 #   DEMO_PASSWORD=demo
-#
-# Notes:
-#   - This script is intentionally API-based, not SQL-based.
-#   - It assumes the current backend routes:
-#       POST /api/company
-#       POST /api/office
-#       POST /api/user
-#       POST /api/client
-#       POST /api/employee
-#       POST /api/shipment
-#       PUT  /api/shipment/{id}/transit
-#       PUT  /api/shipment/{id}/deliver
-#       PUT  /api/shipment/{id}/cancel
-#   - Relationship fields are sent as nested id references, for example:
-#       "company": { "id": 1 }
 
 API_BASE_URL="${API_BASE_URL:-http://localhost:8082}"
 DEMO_PASSWORD="${DEMO_PASSWORD:-demo}"
@@ -121,11 +106,15 @@ create_user() {
   local username="$1"
   local email="$2"
   local role="$3"
+  local first_name="${4:-}"
+  local last_name="${5:-}"
 
   post_json "$API_USER" "{
     \"username\": \"${username}\",
     \"passwordHash\": \"${DEMO_PASSWORD}\",
     \"email\": \"${email}\",
+    \"firstName\": \"${first_name}\",
+    \"lastName\": \"${last_name}\",
     \"role\": \"${role}\"
   }" | json_id
 }
@@ -189,24 +178,11 @@ create_shipment() {
   fi
 }
 
-mark_in_transit() {
-  local shipment_id="$1"
-  put_empty "${API_SHIPMENT}/${shipment_id}/transit"
-}
+mark_in_transit() { put_empty "${API_SHIPMENT}/${1}/transit"; }
+mark_delivered()   { put_empty "${API_SHIPMENT}/${1}/deliver"; }
+mark_cancelled()   { put_empty "${API_SHIPMENT}/${1}/cancel"; }
 
-mark_delivered() {
-  local shipment_id="$1"
-  put_empty "${API_SHIPMENT}/${shipment_id}/deliver"
-}
-
-mark_cancelled() {
-  local shipment_id="$1"
-  put_empty "${API_SHIPMENT}/${shipment_id}/cancel"
-}
-
-print_id() {
-  printf "  %-30s %s\n" "$1" "$2"
-}
+print_id() { printf "  %-34s %s\n" "$1" "$2"; }
 
 require_command curl
 require_command python3
@@ -215,121 +191,181 @@ echo "Inserting demo data into ${API_BASE_URL}"
 echo "All demo users use password: ${DEMO_PASSWORD}"
 echo
 
+# ── Company ────────────────────────────────────────────────────────────────────
 echo "Creating company..."
-COMPANY_ID="$(create_company "Dkont Demo Logistics" "$COMPANY_BASE_PRICE_PER_KG" "$COMPANY_ADDRESS_SURCHARGE")"
-print_id "company:Dkont Demo Logistics" "$COMPANY_ID"
+COMPANY_ID="$(create_company "Dkont Logistics" "$COMPANY_BASE_PRICE_PER_KG" "$COMPANY_ADDRESS_SURCHARGE")"
+print_id "company:Dkont Logistics" "$COMPANY_ID"
 echo
 
+# ── Offices ────────────────────────────────────────────────────────────────────
 echo "Creating offices..."
-SOFIA_OFFICE_ID="$(create_office "$COMPANY_ID" "Sofia" "12 Shipka St." "+359 2 700 1000")"
-PLOVDIV_OFFICE_ID="$(create_office "$COMPANY_ID" "Plovdiv" "44 Maritsa Blvd." "+359 32 700 200")"
-VARNA_OFFICE_ID="$(create_office "$COMPANY_ID" "Varna" "8 Primorski Blvd." "+359 52 700 300")"
-BURGAS_OFFICE_ID="$(create_office "$COMPANY_ID" "Burgas" "31 Transportna St." "+359 56 700 400")"
-RUSE_OFFICE_ID="$(create_office "$COMPANY_ID" "Ruse" "9 Dunav Sq." "+359 82 700 500")"
-print_id "office:Sofia" "$SOFIA_OFFICE_ID"
-print_id "office:Plovdiv" "$PLOVDIV_OFFICE_ID"
-print_id "office:Varna" "$VARNA_OFFICE_ID"
-print_id "office:Burgas" "$BURGAS_OFFICE_ID"
-print_id "office:Ruse" "$RUSE_OFFICE_ID"
+SOFIA_ID="$(create_office   "$COMPANY_ID" "София"         "ул. Шипка 12"              "+359 2 700 1000")"
+PLOVDIV_ID="$(create_office "$COMPANY_ID" "Пловдив"       "бул. Марица 44"            "+359 32 700 200")"
+VARNA_ID="$(create_office   "$COMPANY_ID" "Варна"         "бул. Приморски 8"          "+359 52 700 300")"
+BURGAS_ID="$(create_office  "$COMPANY_ID" "Бургас"        "ул. Транспортна 31"        "+359 56 700 400")"
+RUSE_ID="$(create_office    "$COMPANY_ID" "Русе"          "пл. Дунав 9"               "+359 82 700 500")"
+THESS_ID="$(create_office   "$COMPANY_ID" "Thessaloniki"  "Tsimiski 26"               "+30 231 070 0100")"
+LONDON_ID="$(create_office  "$COMPANY_ID" "London"        "14 Cannon Street"          "+44 20 7000 1000")"
+print_id "office:София"        "$SOFIA_ID"
+print_id "office:Пловдив"      "$PLOVDIV_ID"
+print_id "office:Варна"        "$VARNA_ID"
+print_id "office:Бургас"       "$BURGAS_ID"
+print_id "office:Русе"         "$RUSE_ID"
+print_id "office:Thessaloniki" "$THESS_ID"
+print_id "office:London"       "$LONDON_ID"
 echo
 
+# ── Admin ──────────────────────────────────────────────────────────────────────
 echo "Creating admin user..."
-ADMIN_SEED_ID="$(post_json "$API_USER" "{
+ADMIN_ID="$(post_json "$API_USER" "{
   \"username\": \"admin\",
   \"passwordHash\": \"admin\",
-  \"email\": \"admin@example.test\",
+  \"email\": \"admin@dkont.test\",
+  \"firstName\": \"Администратор\",
+  \"lastName\": \"Системен\",
   \"role\": \"ADMIN\"
 }" | json_id)"
-print_id "user:admin" "$ADMIN_SEED_ID"
+print_id "user:admin" "$ADMIN_ID"
 echo
 
+# ── Employee users ─────────────────────────────────────────────────────────────
 echo "Creating employee users..."
-ELENA_USER_ID="$(create_user "elena.office" "elena.office@example.test" "EMPLOYEE")"
-GEORGI_USER_ID="$(create_user "georgi.office" "georgi.office@example.test" "EMPLOYEE")"
-NIKOLAY_USER_ID="$(create_user "nikolay.courier" "nikolay.courier@example.test" "EMPLOYEE")"
-PETAR_USER_ID="$(create_user "petar.courier" "petar.courier@example.test" "EMPLOYEE")"
-VIKTOR_USER_ID="$(create_user "viktor.courier" "viktor.courier@example.test" "EMPLOYEE")"
-print_id "user:elena.office" "$ELENA_USER_ID"
-print_id "user:georgi.office" "$GEORGI_USER_ID"
-print_id "user:nikolay.courier" "$NIKOLAY_USER_ID"
-print_id "user:petar.courier" "$PETAR_USER_ID"
-print_id "user:viktor.courier" "$VIKTOR_USER_ID"
+# Bulgarian office workers
+ELENA_U="$(create_user    "elena.office"   "elena.ivanova@dkont.test"      "EMPLOYEE" "Елена"      "Иванова")"
+GEORGI_U="$(create_user   "georgi.office"  "georgi.petrov@dkont.test"      "EMPLOYEE" "Георги"     "Петров")"
+# Greek office worker
+ANDREAS_U="$(create_user  "andreas.office" "andreas.p@dkont.test"          "EMPLOYEE" "Ανδρέας"    "Παπαδόπουλος")"
+# English office worker
+JAMES_U="$(create_user    "james.office"   "james.smith@dkont.test"        "EMPLOYEE" "James"      "Smith")"
+# Bulgarian couriers
+NIKOLAY_U="$(create_user  "nikolay.c"      "nikolay.dimitrov@dkont.test"   "EMPLOYEE" "Николай"    "Димитров")"
+PETAR_U="$(create_user    "petar.c"        "petar.stoychev@dkont.test"     "EMPLOYEE" "Петър"      "Стойчев")"
+VIKTOR_U="$(create_user   "viktor.c"       "viktor.hristov@dkont.test"     "EMPLOYEE" "Виктор"     "Христов")"
+# Greek courier
+KOSTAS_U="$(create_user   "kostas.c"       "kostas.n@dkont.test"           "EMPLOYEE" "Κώστας"     "Νικολάου")"
+# English courier
+OLIVER_U="$(create_user   "oliver.c"       "oliver.brown@dkont.test"       "EMPLOYEE" "Oliver"     "Brown")"
+print_id "user:elena.office"   "$ELENA_U"
+print_id "user:georgi.office"  "$GEORGI_U"
+print_id "user:andreas.office" "$ANDREAS_U"
+print_id "user:james.office"   "$JAMES_U"
+print_id "user:nikolay.c"      "$NIKOLAY_U"
+print_id "user:petar.c"        "$PETAR_U"
+print_id "user:viktor.c"       "$VIKTOR_U"
+print_id "user:kostas.c"       "$KOSTAS_U"
+print_id "user:oliver.c"       "$OLIVER_U"
 echo
 
+# ── Employees ──────────────────────────────────────────────────────────────────
 echo "Creating employees..."
-ELENA_EMPLOYEE_ID="$(create_employee "$ELENA_USER_ID" "$COMPANY_ID" "$SOFIA_OFFICE_ID" "OFFICE_EMPLOYEE")"
-GEORGI_EMPLOYEE_ID="$(create_employee "$GEORGI_USER_ID" "$COMPANY_ID" "$PLOVDIV_OFFICE_ID" "OFFICE_EMPLOYEE")"
-NIKOLAY_EMPLOYEE_ID="$(create_employee "$NIKOLAY_USER_ID" "$COMPANY_ID" "$SOFIA_OFFICE_ID" "COURIER")"
-PETAR_EMPLOYEE_ID="$(create_employee "$PETAR_USER_ID" "$COMPANY_ID" "$VARNA_OFFICE_ID" "COURIER")"
-VIKTOR_EMPLOYEE_ID="$(create_employee "$VIKTOR_USER_ID" "$COMPANY_ID" "$BURGAS_OFFICE_ID" "COURIER")"
-print_id "employee:elena.office" "$ELENA_EMPLOYEE_ID"
-print_id "employee:georgi.office" "$GEORGI_EMPLOYEE_ID"
-print_id "employee:nikolay.courier" "$NIKOLAY_EMPLOYEE_ID"
-print_id "employee:petar.courier" "$PETAR_EMPLOYEE_ID"
-print_id "employee:viktor.courier" "$VIKTOR_EMPLOYEE_ID"
+ELENA_E="$(create_employee   "$ELENA_U"   "$COMPANY_ID" "$SOFIA_ID"    "OFFICE_EMPLOYEE")"
+GEORGI_E="$(create_employee  "$GEORGI_U"  "$COMPANY_ID" "$PLOVDIV_ID"  "OFFICE_EMPLOYEE")"
+ANDREAS_E="$(create_employee "$ANDREAS_U" "$COMPANY_ID" "$THESS_ID"    "OFFICE_EMPLOYEE")"
+JAMES_E="$(create_employee   "$JAMES_U"   "$COMPANY_ID" "$LONDON_ID"   "OFFICE_EMPLOYEE")"
+NIKOLAY_E="$(create_employee "$NIKOLAY_U" "$COMPANY_ID" "$SOFIA_ID"    "COURIER")"
+PETAR_E="$(create_employee   "$PETAR_U"   "$COMPANY_ID" "$VARNA_ID"    "COURIER")"
+VIKTOR_E="$(create_employee  "$VIKTOR_U"  "$COMPANY_ID" "$BURGAS_ID"   "COURIER")"
+KOSTAS_E="$(create_employee  "$KOSTAS_U"  "$COMPANY_ID" "$THESS_ID"    "COURIER")"
+OLIVER_E="$(create_employee  "$OLIVER_U"  "$COMPANY_ID" "$LONDON_ID"   "COURIER")"
+print_id "employee:Елена Иванова"         "$ELENA_E"
+print_id "employee:Георги Петров"         "$GEORGI_E"
+print_id "employee:Ανδρέας Παπαδόπουλος" "$ANDREAS_E"
+print_id "employee:James Smith"           "$JAMES_E"
+print_id "employee:Николай Димитров"      "$NIKOLAY_E"
+print_id "employee:Петър Стойчев"         "$PETAR_E"
+print_id "employee:Виктор Христов"        "$VIKTOR_E"
+print_id "employee:Κώστας Νικολάου"       "$KOSTAS_E"
+print_id "employee:Oliver Brown"          "$OLIVER_E"
 echo
 
+# ── Client users ───────────────────────────────────────────────────────────────
 echo "Creating client users..."
-MARIA_USER_ID="$(create_user "maria.client" "maria.client@example.test" "CLIENT")"
-IVAN_USER_ID="$(create_user "ivan.client" "ivan.client@example.test" "CLIENT")"
-ANNA_USER_ID="$(create_user "anna.client" "anna.client@example.test" "CLIENT")"
-STOYAN_USER_ID="$(create_user "stoyan.client" "stoyan.client@example.test" "CLIENT")"
-BORIS_USER_ID="$(create_user "boris.client" "boris.client@example.test" "CLIENT")"
-KALINA_USER_ID="$(create_user "kalina.client" "kalina.client@example.test" "CLIENT")"
-print_id "user:maria.client" "$MARIA_USER_ID"
-print_id "user:ivan.client" "$IVAN_USER_ID"
-print_id "user:anna.client" "$ANNA_USER_ID"
-print_id "user:stoyan.client" "$STOYAN_USER_ID"
-print_id "user:boris.client" "$BORIS_USER_ID"
-print_id "user:kalina.client" "$KALINA_USER_ID"
+# Bulgarian clients
+MARIA_U="$(create_user    "maria.c"    "maria.georgieva@mail.test"     "CLIENT" "Мария"       "Георгиева")"
+IVAN_U="$(create_user     "ivan.c"     "ivan.kolev@mail.test"          "CLIENT" "Иван"        "Колев")"
+ANNA_U="$(create_user     "anna.c"     "anna.todorova@mail.test"       "CLIENT" "Анна"        "Тодорова")"
+STOYAN_U="$(create_user   "stoyan.c"   "stoyan.nikolov@mail.test"      "CLIENT" "Стоян"       "Николов")"
+BORIS_U="$(create_user    "boris.c"    "boris.marinov@mail.test"       "CLIENT" "Борис"       "Маринов")"
+KALINA_U="$(create_user   "kalina.c"   "kalina.stoyanova@mail.test"    "CLIENT" "Калина"      "Стоянова")"
+# Greek clients
+ALEX_U="$(create_user     "alex.c"     "alex.nikolaou@mail.test"       "CLIENT" "Αλέξανδρος"  "Νικολάου")"
+SOFIA_U="$(create_user    "sofia.gr.c" "sofia.k@mail.test"             "CLIENT" "Σοφία"       "Κωνσταντίνου")"
+# English clients
+SARAH_U="$(create_user    "sarah.c"    "sarah.johnson@mail.test"       "CLIENT" "Sarah"       "Johnson")"
+MICHAEL_U="$(create_user  "michael.c"  "michael.brown@mail.test"       "CLIENT" "Michael"     "Brown")"
+print_id "user:Мария Георгиева"         "$MARIA_U"
+print_id "user:Иван Колев"              "$IVAN_U"
+print_id "user:Анна Тодорова"           "$ANNA_U"
+print_id "user:Стоян Николов"           "$STOYAN_U"
+print_id "user:Борис Маринов"           "$BORIS_U"
+print_id "user:Калина Стоянова"         "$KALINA_U"
+print_id "user:Αλέξανδρος Νικολάου"    "$ALEX_U"
+print_id "user:Σοφία Κωνσταντίνου"     "$SOFIA_U"
+print_id "user:Sarah Johnson"           "$SARAH_U"
+print_id "user:Michael Brown"           "$MICHAEL_U"
 echo
 
+# ── Clients ────────────────────────────────────────────────────────────────────
 echo "Creating clients..."
-MARIA_CLIENT_ID="$(create_client "$MARIA_USER_ID" "+359 878 100 201")"
-IVAN_CLIENT_ID="$(create_client "$IVAN_USER_ID" "+359 877 100 202")"
-ANNA_CLIENT_ID="$(create_client "$ANNA_USER_ID" "+359 879 100 203")"
-STOYAN_CLIENT_ID="$(create_client "$STOYAN_USER_ID" "+359 878 100 204")"
-BORIS_CLIENT_ID="$(create_client "$BORIS_USER_ID" "+359 877 100 205")"
-KALINA_CLIENT_ID="$(create_client "$KALINA_USER_ID" "+359 879 100 206")"
-print_id "client:maria" "$MARIA_CLIENT_ID"
-print_id "client:ivan" "$IVAN_CLIENT_ID"
-print_id "client:anna" "$ANNA_CLIENT_ID"
-print_id "client:stoyan" "$STOYAN_CLIENT_ID"
-print_id "client:boris" "$BORIS_CLIENT_ID"
-print_id "client:kalina" "$KALINA_CLIENT_ID"
+MARIA_C="$(create_client   "$MARIA_U"   "+359 878 100 201")"
+IVAN_C="$(create_client    "$IVAN_U"    "+359 877 100 202")"
+ANNA_C="$(create_client    "$ANNA_U"    "+359 879 100 203")"
+STOYAN_C="$(create_client  "$STOYAN_U"  "+359 878 100 204")"
+BORIS_C="$(create_client   "$BORIS_U"   "+359 877 100 205")"
+KALINA_C="$(create_client  "$KALINA_U"  "+359 879 100 206")"
+ALEX_C="$(create_client    "$ALEX_U"    "+30 694 100 0301")"
+SOFIA_C="$(create_client   "$SOFIA_U"   "+30 693 100 0302")"
+SARAH_C="$(create_client   "$SARAH_U"   "+44 7700 900 401")"
+MICHAEL_C="$(create_client "$MICHAEL_U" "+44 7700 900 402")"
+print_id "client:Мария"       "$MARIA_C"
+print_id "client:Иван"        "$IVAN_C"
+print_id "client:Анна"        "$ANNA_C"
+print_id "client:Стоян"       "$STOYAN_C"
+print_id "client:Борис"       "$BORIS_C"
+print_id "client:Калина"      "$KALINA_C"
+print_id "client:Αλέξανδρος" "$ALEX_C"
+print_id "client:Σοφία"       "$SOFIA_C"
+print_id "client:Sarah"       "$SARAH_C"
+print_id "client:Michael"     "$MICHAEL_C"
 echo
 
+# ── Shipments ──────────────────────────────────────────────────────────────────
 echo "Creating shipments..."
-S1="$(create_shipment "$COMPANY_ID" "$MARIA_CLIENT_ID" "$IVAN_CLIENT_ID" "$ELENA_EMPLOYEE_ID" "TO_OFFICE" "$PLOVDIV_OFFICE_ID" "2.500")"
-S2="$(create_shipment "$COMPANY_ID" "$IVAN_CLIENT_ID" "$ANNA_CLIENT_ID" "$GEORGI_EMPLOYEE_ID" "TO_ADDRESS" "$SOFIA_OFFICE_ID" "1.200" "Sofia, 18 Vitosha Blvd., fl. 3")"
-S3="$(create_shipment "$COMPANY_ID" "$ANNA_CLIENT_ID" "$STOYAN_CLIENT_ID" "$ELENA_EMPLOYEE_ID" "TO_OFFICE" "$VARNA_OFFICE_ID" "7.750")"
-S4="$(create_shipment "$COMPANY_ID" "$STOYAN_CLIENT_ID" "$BORIS_CLIENT_ID" "$GEORGI_EMPLOYEE_ID" "TO_ADDRESS" "$PLOVDIV_OFFICE_ID" "4.000" "Plovdiv, 5 Kapana St.")"
-S5="$(create_shipment "$COMPANY_ID" "$BORIS_CLIENT_ID" "$KALINA_CLIENT_ID" "$ELENA_EMPLOYEE_ID" "TO_OFFICE" "$BURGAS_OFFICE_ID" "0.850")"
-S6="$(create_shipment "$COMPANY_ID" "$KALINA_CLIENT_ID" "$MARIA_CLIENT_ID" "$GEORGI_EMPLOYEE_ID" "TO_OFFICE" "$RUSE_OFFICE_ID" "12.300")"
-S7="$(create_shipment "$COMPANY_ID" "$MARIA_CLIENT_ID" "$ANNA_CLIENT_ID" "$ELENA_EMPLOYEE_ID" "TO_ADDRESS" "$SOFIA_OFFICE_ID" "3.400" "Varna, 21 Slivnitsa Blvd.")"
-S8="$(create_shipment "$COMPANY_ID" "$IVAN_CLIENT_ID" "$BORIS_CLIENT_ID" "$GEORGI_EMPLOYEE_ID" "TO_OFFICE" "$SOFIA_OFFICE_ID" "5.650")"
-S9="$(create_shipment "$COMPANY_ID" "$STOYAN_CLIENT_ID" "$KALINA_CLIENT_ID" "$ELENA_EMPLOYEE_ID" "TO_ADDRESS" "$BURGAS_OFFICE_ID" "2.100" "Burgas, 77 Izgrev Complex")"
-S10="$(create_shipment "$COMPANY_ID" "$BORIS_CLIENT_ID" "$IVAN_CLIENT_ID" "$GEORGI_EMPLOYEE_ID" "TO_OFFICE" "$PLOVDIV_OFFICE_ID" "9.900")"
-print_id "shipment:maria-to-ivan" "$S1"
-print_id "shipment:ivan-to-anna" "$S2"
-print_id "shipment:anna-to-stoyan" "$S3"
-print_id "shipment:stoyan-to-boris" "$S4"
-print_id "shipment:boris-to-kalina" "$S5"
-print_id "shipment:kalina-to-maria" "$S6"
-print_id "shipment:maria-to-anna" "$S7"
-print_id "shipment:ivan-to-boris" "$S8"
-print_id "shipment:stoyan-to-kalina" "$S9"
-print_id "shipment:boris-to-ivan" "$S10"
+S1="$(create_shipment  "$COMPANY_ID" "$MARIA_C"   "$IVAN_C"    "$ELENA_E"   "TO_OFFICE"  "$PLOVDIV_ID" "2.500")"
+S2="$(create_shipment  "$COMPANY_ID" "$IVAN_C"    "$ANNA_C"    "$GEORGI_E"  "TO_ADDRESS" "$SOFIA_ID"   "1.200" "София, бул. Витоша 18, ет. 3")"
+S3="$(create_shipment  "$COMPANY_ID" "$ANNA_C"    "$STOYAN_C"  "$ELENA_E"   "TO_OFFICE"  "$VARNA_ID"   "7.750")"
+S4="$(create_shipment  "$COMPANY_ID" "$STOYAN_C"  "$BORIS_C"   "$GEORGI_E"  "TO_ADDRESS" "$PLOVDIV_ID" "4.000" "Пловдив, ул. Капана 5")"
+S5="$(create_shipment  "$COMPANY_ID" "$BORIS_C"   "$KALINA_C"  "$ELENA_E"   "TO_OFFICE"  "$BURGAS_ID"  "0.850")"
+S6="$(create_shipment  "$COMPANY_ID" "$KALINA_C"  "$MARIA_C"   "$GEORGI_E"  "TO_OFFICE"  "$RUSE_ID"    "12.300")"
+S7="$(create_shipment  "$COMPANY_ID" "$ALEX_C"    "$SOFIA_C"   "$ANDREAS_E" "TO_OFFICE"  "$THESS_ID"   "3.200")"
+S8="$(create_shipment  "$COMPANY_ID" "$SOFIA_C"   "$SARAH_C"   "$ANDREAS_E" "TO_ADDRESS" "$THESS_ID"   "1.800" "14 Cannon Street, London")"
+S9="$(create_shipment  "$COMPANY_ID" "$SARAH_C"   "$MICHAEL_C" "$JAMES_E"   "TO_OFFICE"  "$LONDON_ID"  "5.500")"
+S10="$(create_shipment "$COMPANY_ID" "$MICHAEL_C" "$IVAN_C"    "$JAMES_E"   "TO_ADDRESS" "$SOFIA_ID"   "2.100" "София, ул. Раковски 99")"
+S11="$(create_shipment "$COMPANY_ID" "$MARIA_C"   "$SARAH_C"   "$ELENA_E"   "TO_OFFICE"  "$LONDON_ID"  "4.600")"
+S12="$(create_shipment "$COMPANY_ID" "$IVAN_C"    "$ALEX_C"    "$GEORGI_E"  "TO_OFFICE"  "$THESS_ID"   "9.900")"
+print_id "shipment:Мария→Иван"      "$S1"
+print_id "shipment:Иван→Анна"       "$S2"
+print_id "shipment:Анна→Стоян"      "$S3"
+print_id "shipment:Стоян→Борис"     "$S4"
+print_id "shipment:Борис→Калина"    "$S5"
+print_id "shipment:Калина→Мария"    "$S6"
+print_id "shipment:Αλέξ→Σοφία"     "$S7"
+print_id "shipment:Σοφία→Sarah"     "$S8"
+print_id "shipment:Sarah→Michael"   "$S9"
+print_id "shipment:Michael→Иван"    "$S10"
+print_id "shipment:Мария→Sarah"     "$S11"
+print_id "shipment:Иван→Αλέξ"      "$S12"
 echo
 
-echo "Applying varied shipment statuses..."
+echo "Applying shipment statuses..."
 mark_in_transit "$S1"
 mark_in_transit "$S3"
-mark_in_transit "$S5"
-mark_in_transit "$S6"
-mark_delivered "$S2"
-mark_delivered "$S7"
-mark_cancelled "$S9"
+mark_in_transit "$S7"
+mark_in_transit "$S11"
+mark_delivered  "$S2"
+mark_delivered  "$S8"
+mark_delivered  "$S9"
+mark_cancelled  "$S4"
 echo "  statuses applied"
 echo
 
@@ -338,10 +374,16 @@ Demo data insertion completed.
 
 Login examples:
   admin / admin
-  demo-admin / ${DEMO_PASSWORD}
-  elena.office / ${DEMO_PASSWORD}
-  nikolay.courier / ${DEMO_PASSWORD}
-  maria.client / ${DEMO_PASSWORD}
+  elena.office / ${DEMO_PASSWORD}      (офис служител, София)
+  georgi.office / ${DEMO_PASSWORD}     (офис служител, Пловдив)
+  andreas.office / ${DEMO_PASSWORD}    (office employee, Thessaloniki)
+  james.office / ${DEMO_PASSWORD}      (office employee, London)
+  nikolay.c / ${DEMO_PASSWORD}         (куриер, София)
+  kostas.c / ${DEMO_PASSWORD}          (courier, Thessaloniki)
+  oliver.c / ${DEMO_PASSWORD}          (courier, London)
+  maria.c / ${DEMO_PASSWORD}           (клиент)
+  sarah.c / ${DEMO_PASSWORD}           (client)
+  alex.c / ${DEMO_PASSWORD}            (πελάτης)
 
 Useful checks:
   curl -sS ${API_USER}
@@ -350,8 +392,4 @@ Useful checks:
   curl -sS ${API_CLIENT}
   curl -sS ${API_EMPLOYEE}
   curl -sS ${API_SHIPMENT}
-
-If you rerun this script against the same database, unique usernames and company
-name constraints may reject duplicates. Use a fresh database or change the demo
-names before rerunning.
 SUMMARY

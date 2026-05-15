@@ -1,15 +1,17 @@
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { DeveloperHeader } from "../components/DeveloperHeader.jsx";
 import { documentationRoutes } from "../data/documentationRoutes.js";
 
 export function DocumentationPage() {
+  const { t } = useTranslation();
   const { pathname } = useLocation();
   const path = pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
   const activeRoute = documentationRoutes.find((route) => route.path === path) ?? documentationRoutes[0];
 
   return (
     <div>
-      <DeveloperHeader title="Documentation" />
+      <DeveloperHeader title={t("docs.header")} />
       <main className="shell docs-shell">
         <nav className="docs-nav" aria-label="Documentation navigation">
           {documentationRoutes.map((route) => (

@@ -1,20 +1,30 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { checklistTasks } from "../data/checklistTasks.js";
 import { DeveloperHeader } from "../components/DeveloperHeader.jsx";
 import { Metric } from "../components/Metric.jsx";
 import { ViewTitle } from "../components/ViewTitle.jsx";
-import { getChecklistState, updateChecklistState } from "../api.js";
+
+const readState = () => fetch("/task-state.json").then((r) => (r.ok ? r.json() : {}));
+const writeState = (state) =>
+  fetch("/task-state.json", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(state),
+  }).then((r) => r.json());
 
 export function ChecklistPage() {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
   const importRef = useRef(null);
   const [completed, setCompleted] = useState({});
-  const [message, setMessage] = useState("Зареждане на task-state.json...");
+  const [message, setMessage] = useState(() => t("checklist.loading"));
 
   useEffect(() => {
-    getChecklistState()
+    readState()
       .then((state) => {
         setCompleted(state);
-        setMessage("Състоянието е заредено от task-state.json");
+        setMessage(t("checklist.loaded"));
       })
       .catch((error) => setMessage(error.message));
   }, []);
@@ -34,9 +44,9 @@ export function ChecklistPage() {
 
   const saveState = async (state) => {
     try {
-      const saved = await updateChecklistState(state);
+      const saved = await writeState(state);
       setCompleted(saved);
-      setMessage("Записано в task-state.json");
+      setMessage(t("checklist.saved"));
     } catch (error) {
       setMessage(error.message);
     }
@@ -58,9 +68,9 @@ export function ChecklistPage() {
     try {
       const state = JSON.parse(await file.text());
       await saveState(state);
-      setMessage("Импортирано и записано в task-state.json");
+      setMessage(t("checklist.imported"));
     } catch (error) {
-      setMessage(`Невалиден JSON: ${error.message}`);
+      setMessage(t("checklist.invalidJson", { error: error.message }));
     } finally {
       event.currentTarget.value = "";
     }
@@ -75,22 +85,22 @@ export function ChecklistPage() {
 
   return (
     <div>
-      <DeveloperHeader title="Списък със задачи" />
+      <DeveloperHeader title={t("checklist.header")} />
       <main className="shell checklist-shell">
         <ViewTitle
-          eyebrow="Напредък"
-          title="Завършени и оставащи задачи"
+          eyebrow={t("checklist.eyebrow")}
+          title={t("checklist.title")}
           action={
             <div className="developer-actions">
-              <button type="button" className="secondary" onClick={exportState}>Export</button>
-              <button type="button" onClick={() => importRef.current?.click()}>Import</button>
+              <button type="button" className="secondary" onClick={exportState}>{t("checklist.export")}</button>
+              <button type="button" onClick={() => importRef.current?.click()}>{t("checklist.import")}</button>
               <input ref={importRef} className="hidden-file" type="file" accept="application/json,.json" onChange={importState} />
             </div>
           }
         >
           <div className="alert">{message}</div>
           <div className="metrics">
-            <Metric value={`${doneCount}/${checklistTasks.length}`} label="общо завършени" />
+            <Metric value={`${doneCount}/${checklistTasks.length}`} label={t("checklist.completed")} />
             {byOwner.map((item) => (
               <Metric key={item.owner} value={`${item.done}/${item.total}`} label={item.owner} />
             ))}
@@ -98,7 +108,12 @@ export function ChecklistPage() {
           <div className="checklist-table">
             <table>
               <thead>
-                <tr><th>Статус</th><th>Задача</th><th>Област</th><th>Разработчик</th></tr>
+                <tr>
+                  <th>{t("checklist.colStatus")}</th>
+                  <th>{t("checklist.colTask")}</th>
+                  <th>{t("checklist.colArea")}</th>
+                  <th>{t("checklist.colDev")}</th>
+                </tr>
               </thead>
               <tbody>
                 {checklistTasks.map((task) => (
@@ -106,11 +121,11 @@ export function ChecklistPage() {
                     <td>
                       <label className="check-toggle">
                         <input type="checkbox" checked={Boolean(completed[task.id])} onChange={() => toggle(task.id)} />
-                        <span>{completed[task.id] ? "Завършена" : "Незавършена"}</span>
+                        <span>{completed[task.id] ? t("checklist.done") : t("checklist.notDone")}</span>
                       </label>
                     </td>
-                    <td>{task.title}</td>
-                    <td>{task.area}</td>
+                    <td>{task.title[lang] ?? task.title.bg}</td>
+                    <td>{task.area[lang] ?? task.area.bg}</td>
                     <td>{task.owner}</td>
                   </tr>
                 ))}

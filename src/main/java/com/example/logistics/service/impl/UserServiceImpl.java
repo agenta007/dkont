@@ -73,6 +73,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public User updateUserDetails(Long userId, String firstName, String lastName, String email) {
+        User user = getUserById(userId);
+        if (firstName != null && !firstName.isBlank()) user.setFirstName(firstName.trim());
+        if (lastName != null && !lastName.isBlank()) user.setLastName(lastName.trim());
+        user.setEmail(email == null || email.isBlank() ? null : email.trim());
+        return userRepository.save(user);
+    }
+
+    @Override
     public User changeUserRole(Long userId, Role role) {
         if (role == null) throw new IllegalArgumentException("Role is required");
         User user = getUserById(userId);

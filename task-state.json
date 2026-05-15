@@ -1,1 +1,4 @@
-{}
+{
+  "auth-login-register": true,
+  "auth-user-roles": true
+}

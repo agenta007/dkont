@@ -37,8 +37,8 @@ public class ClientApiController {
     public Client createClient(@RequestBody Client client){
         return clientService.createClient(client);
 }
-    @PutMapping
-    public Client updateClientById(@RequestBody Client client, @PathVariable long id){
+    @PutMapping("/{id}")
+    public Client updateClientById(@PathVariable long id, @RequestBody Client client) {
         return clientService.updateClient(id, client);
     }
 

@@ -3,6 +3,7 @@ import maplibregl from "maplibre-gl";
 import { Protocol } from "pmtiles";
 import { ArrowLeft, Building2, Expand, MapPin, PackageCheck, PackageSearch, Play, Radar, Square, Truck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { officeName } from "../utils/logistics.js";
 import { BrandHeader } from "../components/BrandHeader.jsx";
 import { Metric } from "../components/Metric.jsx";
@@ -52,6 +53,7 @@ function ensurePmtilesProtocol() {
 
 export function LiveDashboardPage({ data, session }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const mapRef = useRef(null);
   const mapWrapRef = useRef(null);
   const mapContainerRef = useRef(null);
@@ -84,7 +86,7 @@ export function LiveDashboardPage({ data, session }) {
     });
     mapRef.current.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     mapRef.current.on("error", (event) => {
-      setMapError(event.error?.message ?? "Картата не може да зареди bulgaria.pmtiles");
+      setMapError(event.error?.message ?? t("live.mapError"));
     });
 
     return () => {
@@ -220,35 +222,35 @@ export function LiveDashboardPage({ data, session }) {
   return (
     <div>
       <header className="topbar">
-        <BrandHeader eyebrow="Live dashboard" title="Офиси и шофьори" />
+        <BrandHeader eyebrow={t("live.eyebrow")} title={t("live.title")} />
         <div className="session-badge">
           <span>{session?.role}</span>
           <strong>{session?.username}</strong>
           <button type="button" className="secondary" onClick={() => navigate("/")}>
-            <ArrowLeft size={16} /> Назад
+            <ArrowLeft size={16} /> {t("common.back")}
           </button>
         </div>
       </header>
 
       <main className="shell live-shell">
         <section className="metrics">
-          <Metric value={live.totals.todayReceived} label="Получени днес" />
-          <Metric value={live.totals.todayToReceive} label="За получаване днес" />
-          <Metric value={live.totals.totalInStorage} label="Общо на склад" />
-          <Metric value={live.drivers.length} label="Шофьори" />
+          <Metric value={live.totals.todayReceived} label={t("live.receivedToday")} />
+          <Metric value={live.totals.todayToReceive} label={t("live.toReceiveToday")} />
+          <Metric value={live.totals.totalInStorage} label={t("live.inStorage")} />
+          <Metric value={live.drivers.length} label={t("live.drivers")} />
         </section>
 
         <section className="live-grid">
           <div className="live-map-wrap" ref={mapWrapRef}>
-            <button type="button" className="map-fullscreen" onClick={fullscreenMap} aria-label="Fullscreen map">
-              <Expand size={16} /> Fullscreen
+            <button type="button" className="map-fullscreen" onClick={fullscreenMap} aria-label={t("live.fullscreenLabel")}>
+              <Expand size={16} /> {t("live.fullscreen")}
             </button>
-            <div className="live-map" ref={mapContainerRef} aria-label="Карта на България с офиси и шофьори" />
+            <div className="live-map" ref={mapContainerRef} aria-label={t("live.mapLabel")} />
             {mapError && <div className="map-error">{mapError}</div>}
           </div>
 
           <div className="live-side">
-            <LivePanel title="Офиси" icon={Building2}>
+            <LivePanel title={t("live.offices")} icon={Building2}>
               {live.offices.map((office) => (
                 <article className="live-office" key={office.id}>
                   <div>
@@ -264,7 +266,7 @@ export function LiveDashboardPage({ data, session }) {
               ))}
             </LivePanel>
 
-            <LivePanel title="Шофьори" icon={Truck}>
+            <LivePanel title={t("live.drivers")} icon={Truck}>
               {live.drivers.map((driver) => {
                 const gps = gpsPositions[driver.id];
                 return (
@@ -287,13 +289,13 @@ export function LiveDashboardPage({ data, session }) {
               })}
             </LivePanel>
 
-            <LivePanel title="GPS симулатор" icon={Radar}>
+            <LivePanel title={t("live.simulator")} icon={Radar}>
               <p style={{ color: "var(--muted)", fontSize: "0.875rem", margin: 0 }}>
                 {live.drivers.length === 0
-                  ? "Няма куриери за симулиране."
+                  ? t("live.simNoDrivers")
                   : simulating
-                    ? `Симулиране на ${live.drivers.length} ${live.drivers.length === 1 ? "куриер" : "куриера"}…`
-                    : "Генерира произволни GPS координати за всички куриери и ги изпраща към backend-а."}
+                    ? t("live.simRunning", { count: live.drivers.length })
+                    : t("live.simDescription")}
               </p>
               <button
                 onClick={toggleSimulation}
@@ -301,7 +303,7 @@ export function LiveDashboardPage({ data, session }) {
                 className={simulating ? "secondary" : ""}
                 style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
               >
-                {simulating ? <><Square size={14} /> Спри симулацията</> : <><Play size={14} /> Стартирай симулацията</>}
+                {simulating ? <><Square size={14} /> {t("live.simStop")}</> : <><Play size={14} /> {t("live.simStart")}</>}
               </button>
             </LivePanel>
           </div>
@@ -341,7 +343,7 @@ function buildLiveData(data, today) {
       return {
         id: employee.id,
         officeId: employee.officeId,
-        name: `${employee.firstName ?? ""} ${employee.lastName ?? ""}`.trim() || `Куриер #${employee.id}`,
+        name: `${employee.firstName ?? ""} ${employee.lastName ?? ""}`.trim() || `#${employee.id}`,
         coordinates: offsetCoordinate(office?.coordinates ?? BULGARIA_CENTER, index),
         activeDeliveries: assigned.filter((s) => ACTIVE_STATUSES.has(s.status)).length,
         deliveredToday: assigned.filter((s) => s.receivedDate === today).length,

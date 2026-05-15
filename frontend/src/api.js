@@ -3,9 +3,7 @@ export const API_ENDPOINTS = {
     login: "/api/auth/login",
     register: "/api/auth/register",
   },
-  checklist: {
-    state: "/api/developer/checklist-state",
-  },
+
   resources: {
     companies: "/api/company",
     clients: "/api/client",
@@ -65,11 +63,14 @@ export const login = (payload) => api(withParams(API_ENDPOINTS.auth.login, paylo
 
 export const registerClient = (payload) => api(withParams(API_ENDPOINTS.auth.register, payload), { method: "POST" });
 
-export const getChecklistState = () => api(API_ENDPOINTS.checklist.state);
-
-export const updateChecklistState = (state) => api(API_ENDPOINTS.checklist.state, {
+export const updateClient = (id, payload) => api(`${API_ENDPOINTS.resources.clients}/${id}`, {
   method: "PUT",
-  body: JSON.stringify(state),
+  body: JSON.stringify(payload),
+});
+
+export const updateUser = (id, payload) => api(`${API_ENDPOINTS.resources.users}/${id}`, {
+  method: "PUT",
+  body: JSON.stringify(payload),
 });
 
 export const createShipment = (shipment) => api(API_ENDPOINTS.resources.shipments, {

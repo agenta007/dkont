@@ -1,24 +1,11 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { labels } from "../constants.js";
+import { useTranslation } from "react-i18next";
 import { fullName } from "../utils/logistics.js";
 import { BrandHeader } from "./BrandHeader.jsx";
+import { LanguageSwitcher } from "./LanguageSwitcher.jsx";
 
-//shared layout wrapper for every logged-in user view.
-export function AuthenticatedShell({ active,
-                                       children,
-                                       currentClient,
-                                       currentEmployee,
-                                       currentOffice,
-                                       error,
-                                       extraTabs,
-                                       onLogout,
-                                       session,
-                                       setActive,
-                                       setLoginSuccess,
-                                       tabs,
-                                       loginSuccess,
-                                       logoutMessage,
-                                    }) {
+export function AuthenticatedShell({ active, children, currentClient, currentEmployee, currentOffice, error, extraTabs, onLogout, session, setActive, setLoginSuccess, tabs, loginSuccess, logoutMessage }) {
+  const { t } = useTranslation();
   return (
     <div>
       <AnimatePresence>
@@ -38,8 +25,8 @@ export function AuthenticatedShell({ active,
               exit={{ opacity: 0, x: 48, scale: 0.98 }}
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             >
-              <span>{logoutMessage ? "Logged out" : "Login successful"}</span>
-              {!logoutMessage && <button type="button" aria-label="Close" onClick={() => setLoginSuccess(false)}>X</button>}
+              <span>{logoutMessage ? t("auth.loggedOut") : t("auth.loginSuccess")}</span>
+              {!logoutMessage && <button type="button" aria-label={t("common.close")} onClick={() => setLoginSuccess(false)}>X</button>}
             </motion.div>
           </motion.div>
         )}
@@ -47,18 +34,19 @@ export function AuthenticatedShell({ active,
       <header className="topbar">
         <BrandHeader title="Dkont" />
         <div className="session-badge">
-          <span>{labels[session.role]}</span>
-          {currentEmployee && <span>{labels[currentEmployee.employeeType]}</span>}
+          <span>{t(`labels.${session.role}`)}</span>
+          {currentEmployee && <span>{t(`labels.${currentEmployee.employeeType}`)}</span>}
           {currentOffice && <span>{currentOffice.address}</span>}
           <strong>{session.username}</strong>
-          <button type="button" className="logout-button" onClick={onLogout}>Изход</button>
+          <LanguageSwitcher />
+          <button type="button" className="logout-button" onClick={onLogout}>{t("common.logout")}</button>
         </div>
       </header>
 
       <main className="shell">
         {error && <div className="alert">{error}</div>}
         <section className="controls">
-          <nav className="tabs" aria-label="Навигация">
+          <nav className="tabs" aria-label={t("nav.navigation")}>
             {tabs.map(([key, label, Icon]) => (
               <button key={key} className={active === key ? "active" : ""} onClick={() => setActive(key)}>
                 <Icon size={16} /> {label}

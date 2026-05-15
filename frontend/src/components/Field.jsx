@@ -1,5 +1,28 @@
+import { useTranslation } from "react-i18next";
+
 export function Field({ field }) {
-  if (field === "employeeType") return <label>Тип<select name="employeeType"><option value="OFFICE_EMPLOYEE">офис служител</option><option value="COURIER">куриер</option></select></label>;
-  const labelsByField = { firstName: "Име", lastName: "Фамилия", phone: "Телефон", email: "Имейл", address: "Адрес", userId: "Потребител ID", officeId: "Офис ID", name: "Име", city: "Град" };
+  const { t } = useTranslation();
+  if (field === "employeeType") {
+    return (
+      <label>
+        {t("fields.type")}
+        <select name="employeeType">
+          <option value="OFFICE_EMPLOYEE">{t("fields.employeeTypeOffice")}</option>
+          <option value="COURIER">{t("fields.employeeTypeCourier")}</option>
+        </select>
+      </label>
+    );
+  }
+  const labelsByField = {
+    firstName: t("fields.firstName"),
+    lastName: t("fields.lastName"),
+    phone: t("fields.phone"),
+    email: t("fields.email"),
+    address: t("fields.address"),
+    userId: t("fields.userId"),
+    officeId: t("fields.officeId"),
+    name: t("fields.name"),
+    city: t("fields.city"),
+  };
   return <label>{labelsByField[field] ?? field}<input name={field} type={field.endsWith("Id") ? "number" : field === "email" ? "email" : "text"} required /></label>;
 }

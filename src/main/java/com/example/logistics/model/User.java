@@ -1,6 +1,7 @@
 package com.example.logistics.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 //login identity
@@ -35,11 +36,9 @@ public class User {
     private LocalDateTime createdAt;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    @JsonIgnore
     private Employee employee;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    @JsonIgnore
     private Client client;
 
     @PrePersist
@@ -49,7 +48,9 @@ public class User {
     public void setId(Long id) { this.id = id; }
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
+    @JsonIgnore
     public String getPasswordHash() { return passwordHash; }
+    @JsonProperty
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
@@ -60,8 +61,10 @@ public class User {
     public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    @JsonIgnore
     public Employee getEmployee() { return employee; }
     public void setEmployee(Employee employee) { this.employee = employee; }
+    @JsonIgnore
     public Client getClient() { return client; }
     public void setClient(Client client) { this.client = client; }
 }

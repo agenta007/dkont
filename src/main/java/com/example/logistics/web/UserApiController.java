@@ -46,6 +46,11 @@ public class UserApiController {
     }
 
     // PUT
+    @PutMapping("/{id}")
+    public User updateUser(@PathVariable long id, @RequestBody User user) {
+        return userService.updateUserDetails(id, user.getFirstName(), user.getLastName(), user.getEmail());
+    }
+
     @PutMapping("/{id}/role")
     public User changeUserRole(@PathVariable long id, @RequestParam Role role) {
         return userService.changeUserRole(id, role);

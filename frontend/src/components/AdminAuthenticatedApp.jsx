@@ -1,12 +1,23 @@
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { BarChart3, Building2, CheckCircle2, ClipboardList, MapPinned, Users } from "lucide-react";
 import { AuthenticatedShell } from "./AuthenticatedShell.jsx";
 import { Clients, Companies, Dashboard, Employees, Offices, Reports } from "./operations.jsx";
 
 export function AdminAuthenticatedApp({ active, data, error, load, loginSuccess, logoutMessage, onLogout, session, setActive, setLoginSuccess, visibleShipments }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const currentEmployee = data.employees.find((employee) => employee.id === Number(session.employeeId));
   const currentOffice = data.offices.find((office) => office.id === Number(session.officeId));
+
+  const adminTabs = [
+    ["dashboard", t("nav.dashboard"), BarChart3],
+    ["companies", t("nav.companies"), Building2],
+    ["offices", t("nav.offices"), Building2],
+    ["employees", t("nav.employees"), ClipboardList],
+    ["clients", t("nav.clients"), Users],
+    ["reports", t("nav.reports"), CheckCircle2],
+  ];
 
   return (
     <AuthenticatedShell
@@ -32,12 +43,3 @@ export function AdminAuthenticatedApp({ active, data, error, load, loginSuccess,
     </AuthenticatedShell>
   );
 }
-
-const adminTabs = [
-  ["dashboard", "Табло", BarChart3],
-  ["companies", "Компании", Building2],
-  ["offices", "Офиси", Building2],
-  ["employees", "Служители", ClipboardList],
-  ["clients", "Клиенти", Users],
-  ["reports", "Справки", CheckCircle2],
-];

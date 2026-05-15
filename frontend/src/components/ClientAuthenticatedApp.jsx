@@ -1,9 +1,16 @@
+import { useTranslation } from "react-i18next";
 import { BarChart3, Truck } from "lucide-react";
 import { AuthenticatedShell } from "./AuthenticatedShell.jsx";
 import { Dashboard, Shipments } from "./operations.jsx";
 
 export function ClientAuthenticatedApp({ active, clientId, data, error, load, loginSuccess, logoutMessage, onLogout, session, setActive, setLoginSuccess, visibleShipments }) {
+  const { t } = useTranslation();
   const currentClient = data.clients.find((client) => client.id === Number(clientId));
+
+  const clientTabs = [
+    ["dashboard", t("nav.dashboard"), BarChart3],
+    ["shipments", t("nav.myShipments"), Truck],
+  ];
 
   return (
     <AuthenticatedShell
@@ -23,8 +30,3 @@ export function ClientAuthenticatedApp({ active, clientId, data, error, load, lo
     </AuthenticatedShell>
   );
 }
-
-const clientTabs = [
-  ["dashboard", "Табло", BarChart3],
-  ["shipments", "Моите пратки", Truck],
-];

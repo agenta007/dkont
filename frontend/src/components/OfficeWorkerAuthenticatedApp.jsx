@@ -1,10 +1,17 @@
+import { useTranslation } from "react-i18next";
 import { BarChart3, Truck } from "lucide-react";
 import { AuthenticatedShell } from "./AuthenticatedShell.jsx";
 import { Dashboard, Shipments } from "./operations.jsx";
 
 export function OfficeWorkerAuthenticatedApp({ active, data, error, load, loginSuccess, logoutMessage, onLogout, session, setActive, setLoginSuccess, visibleShipments }) {
+  const { t } = useTranslation();
   const currentEmployee = data.employees.find((employee) => employee.id === Number(session.employeeId));
   const currentOffice = data.offices.find((office) => office.id === Number(session.officeId));
+
+  const officeWorkerTabs = [
+    ["dashboard", t("nav.dashboard"), BarChart3],
+    ["shipments", t("nav.officeShipments"), Truck],
+  ];
 
   return (
     <AuthenticatedShell
@@ -25,8 +32,3 @@ export function OfficeWorkerAuthenticatedApp({ active, data, error, load, loginS
     </AuthenticatedShell>
   );
 }
-
-const officeWorkerTabs = [
-  ["dashboard", "Табло", BarChart3],
-  ["shipments", "Пратки в офиса", Truck],
-];
