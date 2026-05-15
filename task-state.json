@@ -1,4 +1,9 @@
 {
   "auth-login-register": true,
-  "auth-user-roles": true
+  "auth-user-roles": true,
+  "crud-company": true,
+  "crud-employee": true,
+  "crud-client": true,
+  "crud-office": true,
+  "crud-shipment": true
 }

@@ -186,55 +186,71 @@ export function Shipments({ data, shipments, role, session, onRefresh }) {
 
 export function Companies({ data, onRefresh }) {
   const { t } = useTranslation();
+  const { message: toast, type: toastType, notify, dismiss } = useOverlayNotification();
   return (
-    <CrudView
-      eyebrow={t("companies.eyebrow")}
-      title={t("companies.title")}
-      endpoint="companies"
-      fields={["name", "address", "phone", "email"]}
-      data={data.companies}
-      onRefresh={onRefresh}
-      renderRow={(company) => [company.name, company.address, company.phone, company.email]}
-      addLabel={t("companies.add")}
-      stacked
-    />
+    <>
+      <OverlayNotification message={toast} type={toastType} onDismiss={dismiss} />
+      <CrudView
+        eyebrow={t("companies.eyebrow")}
+        title={t("companies.title")}
+        endpoint="companies"
+        fields={["name", "address", "phone", "email"]}
+        data={data.companies}
+        onRefresh={onRefresh}
+        renderRow={(company) => [company.name, company.address, company.phone, company.email]}
+        addLabel={t("companies.add")}
+        addSuccess={t("companies.addSuccess")}
+        addError={(err) => t("companies.addError", { error: err.message })}
+        onNotify={notify}
+        stacked
+      />
+    </>
   );
 }
 
 export function Clients({ data, selectedCompanyId, onRefresh }) {
   const { t } = useTranslation();
-  const [editing, setEditing] = useState(null); // null = add mode, client object = edit mode
-
-  const addFormRef = (form) => { if (form && !editing) form.reset(); };
+  const [editing, setEditing] = useState(null);
+  const { message: toast, type: toastType, notify, dismiss } = useOverlayNotification();
 
   const submitAdd = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
     const values = numericForm(form);
-    const user = await createUser({
-      username: values.username,
-      passwordHash: values.password,
-      email: values.email || null,
-      firstName: values.firstName,
-      lastName: values.lastName,
-      role: "CLIENT",
-    });
-    await createResource("clients", { user: { id: user.id }, phone: values.phone });
-    form.reset();
-    await onRefresh();
+    try {
+      const user = await createUser({
+        username: values.username,
+        passwordHash: values.password,
+        email: values.email || null,
+        firstName: values.firstName,
+        lastName: values.lastName,
+        role: "CLIENT",
+      });
+      await createResource("clients", { user: { id: user.id }, phone: values.phone });
+      form.reset();
+      await onRefresh();
+      notify(t("clients.addSuccess"), "success");
+    } catch (err) {
+      notify(t("clients.addError", { error: err.message }), "error");
+    }
   };
 
   const submitEdit = async (event) => {
     event.preventDefault();
     const values = numericForm(event.currentTarget);
-    await updateUser(editing.userId, {
-      firstName: values.firstName,
-      lastName: values.lastName,
-      email: values.email || null,
-    });
-    await updateClient(editing.id, { phone: values.phone });
-    setEditing(null);
-    await onRefresh();
+    try {
+      await updateUser(editing.userId, {
+        firstName: values.firstName,
+        lastName: values.lastName,
+        email: values.email || null,
+      });
+      await updateClient(editing.id, { phone: values.phone });
+      setEditing(null);
+      await onRefresh();
+      notify(t("clients.saveSuccess"), "success");
+    } catch (err) {
+      notify(t("clients.saveError", { error: err.message }), "error");
+    }
   };
 
   const remove = async (id) => {
@@ -245,6 +261,7 @@ export function Clients({ data, selectedCompanyId, onRefresh }) {
 
   return (
     <ViewTitle eyebrow={t("clients.eyebrow")} title={t("clients.title")}>
+      <OverlayNotification message={toast} type={toastType} onDismiss={dismiss} />
       <div className="split" style={{ gridTemplateColumns: "1fr" }}>
         {editing ? (
           <form key={editing.id} className="form-grid panel" onSubmit={submitEdit}>
@@ -614,14 +631,19 @@ function AddClientModal({ onClose, onCreated }) {
   );
 }
 
-function CrudView({ eyebrow, title, endpoint, fields, data, renderRow, onRefresh, extra = {}, addLabel, stacked = false }) {
+function CrudView({ eyebrow, title, endpoint, fields, data, renderRow, onRefresh, extra = {}, addLabel, stacked = false, onNotify, addSuccess, addError }) {
   const { t } = useTranslation();
   const submit = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
-    await createResource(endpoint, { ...extra, ...numericForm(form) });
-    form.reset();
-    await onRefresh();
+    try {
+      await createResource(endpoint, { ...extra, ...numericForm(form) });
+      form.reset();
+      await onRefresh();
+      onNotify?.(addSuccess, "success");
+    } catch (err) {
+      onNotify?.(addError ? addError(err) : err.message, "error");
+    }
   };
   const remove = async (id) => {
     await deleteResource(endpoint, id);
