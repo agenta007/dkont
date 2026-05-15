@@ -1,5 +1,6 @@
 package com.example.logistics.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -14,18 +15,22 @@ public class Shipment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Company company;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_id", nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Client sender;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recipient_id", nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Client recipient;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "registered_by_id", nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Employee registeredBy;
 
     @Enumerated(EnumType.STRING)
@@ -37,6 +42,7 @@ public class Shipment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "destination_office_id")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Office destinationOffice;
 
     @Column(nullable = false, precision = 10, scale = 3)
@@ -65,18 +71,23 @@ public class Shipment {
     public void setId(Long id) { this.id = id; }
     public Company getCompany() { return company; }
     public void setCompany(Company company) { this.company = company; }
+    public Long getCompanyId() { return company == null ? null : company.getId(); }
     public Client getSender() { return sender; }
     public void setSender(Client sender) { this.sender = sender; }
+    public Long getSenderClientId() { return sender == null ? null : sender.getId(); }
     public Client getRecipient() { return recipient; }
     public void setRecipient(Client recipient) { this.recipient = recipient; }
+    public Long getReceiverClientId() { return recipient == null ? null : recipient.getId(); }
     public Employee getRegisteredBy() { return registeredBy; }
     public void setRegisteredBy(Employee registeredBy) { this.registeredBy = registeredBy; }
+    public Long getRegisteredByEmployeeId() { return registeredBy == null ? null : registeredBy.getId(); }
     public DeliveryType getDeliveryType() { return deliveryType; }
     public void setDeliveryType(DeliveryType deliveryType) { this.deliveryType = deliveryType; }
     public String getDeliveryAddress() { return deliveryAddress; }
     public void setDeliveryAddress(String deliveryAddress) { this.deliveryAddress = deliveryAddress; }
     public Office getDestinationOffice() { return destinationOffice; }
     public void setDestinationOffice(Office destinationOffice) { this.destinationOffice = destinationOffice; }
+    public Long getDestinationOfficeId() { return destinationOffice == null ? null : destinationOffice.getId(); }
     public BigDecimal getWeight() { return weight; }
     public void setWeight(BigDecimal weight) { this.weight = weight; }
     public BigDecimal getPrice() { return price; }
@@ -84,6 +95,8 @@ public class Shipment {
     public ShipmentStatus getStatus() { return status; }
     public void setStatus(ShipmentStatus status) { this.status = status; }
     public LocalDateTime getRegisteredAt() { return registeredAt; }
+    public String getSentDate() { return registeredAt == null ? null : registeredAt.toLocalDate().toString(); }
     public LocalDateTime getDeliveredAt() { return deliveredAt; }
+    public String getReceivedDate() { return deliveredAt == null ? null : deliveredAt.toLocalDate().toString(); }
     public void setDeliveredAt(LocalDateTime deliveredAt) { this.deliveredAt = deliveredAt; }
 }

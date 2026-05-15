@@ -1,5 +1,6 @@
 package com.example.logistics.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.List;
@@ -22,12 +23,15 @@ public class Company {
     private BigDecimal addressSurcharge;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Office> offices;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Employee> employees;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Shipment> shipments;
 
     // Getters and Setters

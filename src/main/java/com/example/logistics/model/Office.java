@@ -1,5 +1,7 @@
 package com.example.logistics.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.util.List;
 
@@ -13,6 +15,7 @@ public class Office {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Company company;
 
     @Column(nullable = false)
@@ -24,15 +27,18 @@ public class Office {
     private String phone;
 
     @OneToMany(mappedBy = "office")
+    @JsonIgnore
     private List<Employee> employees;
 
     @OneToMany(mappedBy = "destinationOffice")
+    @JsonIgnore
     private List<Shipment> incomingShipments;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Company getCompany() { return company; }
     public void setCompany(Company company) { this.company = company; }
+    public Long getCompanyId() { return company == null ? null : company.getId(); }
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
     public String getCity() { return city; }
