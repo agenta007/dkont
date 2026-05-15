@@ -1,6 +1,7 @@
 package com.example.logistics.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -30,7 +31,7 @@ public class User {
     private Role role;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private java.time.LocalDateTime createdAt;
+    private LocalDateTime createdAt;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Employee employee;
@@ -39,7 +40,7 @@ public class User {
     private Client client;
 
     @PrePersist
-    protected void onCreate() { this.createdAt = java.time.LocalDateTime.now(); }
+    protected void onCreate() { this.createdAt = LocalDateTime.now(); }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -55,7 +56,7 @@ public class User {
     public void setLastName(String lastName) { this.lastName = lastName; }
     public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
-    public java.time.LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
     public Employee getEmployee() { return employee; }
     public void setEmployee(Employee employee) { this.employee = employee; }
     public Client getClient() { return client; }
