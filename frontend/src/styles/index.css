@@ -78,7 +78,7 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; }
 .success-popup button { min-height: 30px; margin-left: auto; padding: 4px 9px; background: oklch(35% 0.1 155); color: oklch(98% 0.006 155); }
 .error-popup { color: oklch(22% 0.08 28); background: oklch(91% 0.08 28); border-color: oklch(72% 0.13 30); }
 .error-popup button { background: oklch(42% 0.18 28); color: oklch(98% 0.012 28); }
-.checklist-shell { max-width: 1180px; margin: 0 auto; }
+.checklist-shell { max-width: 95%; margin: 0 auto; }
 .checklist-table { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; }
 .active-row td { background: oklch(97% 0.015 250); }
 .completed-row td { color: var(--muted); background: oklch(97% 0.012 155); }
