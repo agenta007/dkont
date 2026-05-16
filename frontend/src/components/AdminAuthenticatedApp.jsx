@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { BarChart3, Building2, CheckCircle2, ClipboardList, MapPinned, Users } from "lucide-react";
+import { BarChart3, Building2, CheckCircle2, ClipboardList, LayoutList, MapPinned, Users } from "lucide-react";
 import { AuthenticatedShell } from "./AuthenticatedShell.jsx";
-import { Clients, Companies, Dashboard, Employees, Offices, Reports } from "./operations.jsx";
+import { Clients, Companies, Dashboard, Employees, Offices, OfficeOverview, Reports } from "./operations.jsx";
 
 export function AdminAuthenticatedApp({ active, data, error, load, loginSuccess, logoutMessage, onLogout, session, setActive, setLoginSuccess, visibleShipments }) {
   const navigate = useNavigate();
@@ -14,6 +14,7 @@ export function AdminAuthenticatedApp({ active, data, error, load, loginSuccess,
     ["dashboard", t("nav.dashboard"), BarChart3],
     ["companies", t("nav.companies"), Building2],
     ["offices", t("nav.offices"), Building2],
+    ["officeOverview", t("nav.officeOverview"), LayoutList],
     ["employees", t("nav.employees"), ClipboardList],
     ["clients", t("nav.clients"), Users],
     ["reports", t("nav.reports"), CheckCircle2],
@@ -37,6 +38,7 @@ export function AdminAuthenticatedApp({ active, data, error, load, loginSuccess,
       {active === "dashboard" && <Dashboard data={data} visibleShipments={visibleShipments} currentClient={null} currentOffice={currentOffice} session={session} onRefresh={load} />}
       {active === "companies" && <Companies data={data} onRefresh={load} />}
       {active === "offices" && <Offices data={data} selectedCompanyId={data.companies[0]?.id ?? ""} onRefresh={load} />}
+      {active === "officeOverview" && <OfficeOverview data={data} shipments={visibleShipments} onRefresh={load} />}
       {active === "employees" && <Employees data={data} selectedCompanyId={data.companies[0]?.id ?? ""} onRefresh={load} />}
       {active === "clients" && <Clients data={data} selectedCompanyId={data.companies[0]?.id ?? ""} onRefresh={load} />}
       {active === "reports" && <Reports data={data} />}
