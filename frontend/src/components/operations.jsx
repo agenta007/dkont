@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PackagePlus, RefreshCw } from "lucide-react";
-import { changeUserRole, createEmployee, createResource, createShipment, createUser, deleteEmployee, deleteResource, deleteShipment, deliverShipment, updateClient, updateUser } from "../api.js";
+import { changeUserRole, createEmployee, createResource, createShipment, createUser, deleteEmployee, deleteResource, deleteShipment, deliverShipment, getGpsPositions, updateClient, updateUser } from "../api.js";
 import { clientName, fullName, numericForm, officeName } from "../utils/logistics.js";
 import { Field } from "./Field.jsx";
 import { IconButton } from "./IconButton.jsx";
@@ -126,14 +126,21 @@ export function Dashboard({ data, visibleShipments, currentClient, currentOffice
 export function Shipments({ data, shipments, role, session, onRefresh }) {
   const { t } = useTranslation();
   const canCreateShipment = role === "EMPLOYEE" && session?.employeeType === "OFFICE_EMPLOYEE";
+  const [deliveryType, setDeliveryType] = useState("TO_OFFICE");
+
+  const registeringEmployee = data.employees.find((e) => e.id === Number(session.employeeId));
+  const companyId = registeringEmployee?.companyId ?? data.companies[0]?.id;
+  const companyOffices = useMemo(
+    () => data.offices.filter((o) => o.companyId === companyId),
+    [data.offices, companyId]
+  );
 
   const saveShipment = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
     const values = numericForm(form);
-    const registeringEmployee = data.employees.find((employee) => employee.id === Number(session.employeeId));
     const payload = {
-      company: { id: registeringEmployee?.companyId ?? data.companies[0]?.id },
+      company: { id: companyId },
       sender: { id: values.senderClientId },
       recipient: { id: values.receiverClientId },
       registeredBy: { id: Number(session.employeeId) },
@@ -147,6 +154,7 @@ export function Shipments({ data, shipments, role, session, onRefresh }) {
     }
     await createShipment(payload);
     form.reset();
+    setDeliveryType("TO_OFFICE");
     await onRefresh();
   };
 
@@ -166,16 +174,26 @@ export function Shipments({ data, shipments, role, session, onRefresh }) {
         <form className="form-grid panel" onSubmit={saveShipment}>
           <ClientPicker name="senderClientId" label={t("shipments.sender")} clients={data.clients} onRefresh={onRefresh} />
           <ClientPicker name="receiverClientId" label={t("shipments.receiver")} clients={data.clients} onRefresh={onRefresh} />
-          <Select name="destinationOfficeId" label={t("shipments.destOffice")} items={data.offices} render={(office) => office.address} />
           <label>
             {t("shipments.deliveryType")}
-            <select name="deliveryType">
+            <select name="deliveryType" value={deliveryType} onChange={(e) => setDeliveryType(e.target.value)}>
               <option value="TO_OFFICE">{t("shipments.toOffice")}</option>
               <option value="TO_ADDRESS">{t("shipments.toAddress")}</option>
             </select>
           </label>
+          {deliveryType === "TO_OFFICE" ? (
+            <label>
+              {t("shipments.destOffice")}
+              <select name="destinationOfficeId" required>
+                {companyOffices.map((office) => (
+                  <option key={office.id} value={office.id}>{office.address}</option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <label className="wide">{t("shipments.address")}<input name="deliveryAddress" required /></label>
+          )}
           <label>{t("shipments.weight")}<input name="weight" type="number" step="0.1" min="0.1" defaultValue="1.0" /></label>
-          <label className="wide">{t("shipments.address")}<input name="deliveryAddress" /></label>
           <button className="wide"><PackagePlus size={16} /> {t("shipments.add")}</button>
         </form>
       )}
@@ -211,28 +229,13 @@ export function Companies({ data, onRefresh }) {
 export function Clients({ data, selectedCompanyId, onRefresh }) {
   const { t } = useTranslation();
   const [editing, setEditing] = useState(null);
+  const [showAdd, setShowAdd] = useState(false);
   const { message: toast, type: toastType, notify, dismiss } = useOverlayNotification();
 
-  const submitAdd = async (event) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const values = numericForm(form);
-    try {
-      const user = await createUser({
-        username: values.username,
-        passwordHash: values.password,
-        email: values.email || null,
-        firstName: values.firstName,
-        lastName: values.lastName,
-        role: "CLIENT",
-      });
-      await createResource("clients", { user: { id: user.id }, phone: values.phone });
-      form.reset();
-      await onRefresh();
-      notify(t("clients.addSuccess"), "success");
-    } catch (err) {
-      notify(t("clients.addError", { error: err.message }), "error");
-    }
+  const handleCreated = async () => {
+    setShowAdd(false);
+    await onRefresh();
+    notify(t("clients.addSuccess"), "success");
   };
 
   const submitEdit = async (event) => {
@@ -260,48 +263,42 @@ export function Clients({ data, selectedCompanyId, onRefresh }) {
   };
 
   return (
-    <ViewTitle eyebrow={t("clients.eyebrow")} title={t("clients.title")}>
+    <ViewTitle eyebrow={t("clients.eyebrow")} title={t("clients.title")}
+      action={<button onClick={() => setShowAdd(true)}>{t("clients.add")}</button>}>
       <OverlayNotification message={toast} type={toastType} onDismiss={dismiss} />
-      <div className="split" style={{ gridTemplateColumns: "1fr" }}>
-        {editing ? (
-          <form key={editing.id} className="form-grid panel" onSubmit={submitEdit}>
-            <h4 style={{ margin: 0, gridColumn: "1 / -1" }}>{t("clients.editTitle")}</h4>
-            <label>{t("clients.firstName")}<input name="firstName" defaultValue={editing.firstName} required /></label>
-            <label>{t("clients.lastName")}<input name="lastName" defaultValue={editing.lastName} required /></label>
-            <label>{t("clients.email")} <small style={{ fontWeight: 400 }}>({t("common.optional")})</small><input name="email" type="email" defaultValue={editing.email ?? ""} /></label>
-            <label>{t("clients.phone")}<input name="phone" defaultValue={editing.phone ?? ""} required /></label>
-            <button className="wide">{t("clients.save")}</button>
-            <button type="button" className="wide secondary" onClick={() => setEditing(null)}>{t("common.back")}</button>
-          </form>
-        ) : (
-          <form className="form-grid panel" onSubmit={submitAdd}>
-            <h4 style={{ margin: 0, gridColumn: "1 / -1" }}>{t("clients.addTitle")}</h4>
-            <label>{t("clients.firstName")}<input name="firstName" required /></label>
-            <label>{t("clients.lastName")}<input name="lastName" required /></label>
-            <label>{t("clients.username")}<input name="username" required /></label>
-            <label>{t("clients.password")}<input name="password" type="password" required /></label>
-            <label>{t("clients.email")} <small style={{ fontWeight: 400 }}>({t("common.optional")})</small><input name="email" type="email" /></label>
-            <label>{t("clients.phone")}<input name="phone" required /></label>
-            <button className="wide">{t("clients.add")}</button>
-          </form>
-        )}
-        <div className="table-wrap">
-          <table>
-            <tbody>
-              {data.clients.map((client) => (
-                <tr key={client.id} className={editing?.id === client.id ? "active-row" : ""}>
-                  <td>{fullName(client)}</td>
-                  <td>{client.phone}</td>
-                  <td>{client.email}</td>
-                  <td className="actions">
-                    <button className="secondary" onClick={() => setEditing(client)}>{t("common.edit")}</button>
-                    <button className="secondary" onClick={() => remove(client.id)}>{t("common.delete")}</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {showAdd && (
+        <AddClientModal
+          onClose={() => setShowAdd(false)}
+          onCreated={handleCreated}
+        />
+      )}
+      {editing && (
+        <form key={editing.id} className="form-grid panel" style={{ marginBottom: 16 }} onSubmit={submitEdit}>
+          <h4 style={{ margin: 0, gridColumn: "1 / -1" }}>{t("clients.editTitle")}</h4>
+          <label>{t("clients.firstName")}<input name="firstName" defaultValue={editing.firstName} required /></label>
+          <label>{t("clients.lastName")}<input name="lastName" defaultValue={editing.lastName} required /></label>
+          <label>{t("clients.email")} <small style={{ fontWeight: 400 }}>({t("common.optional")})</small><input name="email" type="email" defaultValue={editing.email ?? ""} /></label>
+          <label>{t("clients.phone")}<input name="phone" defaultValue={editing.phone ?? ""} required /></label>
+          <button className="wide">{t("clients.save")}</button>
+          <button type="button" className="wide secondary" onClick={() => setEditing(null)}>{t("common.back")}</button>
+        </form>
+      )}
+      <div className="table-wrap">
+        <table>
+          <tbody>
+            {data.clients.map((client) => (
+              <tr key={client.id} className={editing?.id === client.id ? "active-row" : ""}>
+                <td>{fullName(client)}</td>
+                <td>{client.phone}</td>
+                <td>{client.email}</td>
+                <td className="actions">
+                  <button className="secondary" onClick={() => setEditing(client)}>{t("common.edit")}</button>
+                  <button className="secondary" onClick={() => remove(client.id)}>{t("common.delete")}</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </ViewTitle>
   );
@@ -628,6 +625,129 @@ function AddClientModal({ onClose, onCreated }) {
         </div>
       </form>
     </dialog>
+  );
+}
+
+const ACTIVE_STATUSES = new Set(["REGISTERED", "IN_TRANSIT"]);
+const DONE_STATUSES = new Set(["DELIVERED", "CANCELLED"]);
+const STATUS_STEPS = ["REGISTERED", "IN_TRANSIT", "DELIVERED"];
+
+export function ClientDeliveries({ data, shipments, session, onRefresh }) {
+  const { t } = useTranslation();
+  const [gpsPositions, setGpsPositions] = useState({});
+
+  const incoming = useMemo(
+    () => shipments.filter((s) => s.receiverClientId === session.clientId),
+    [shipments, session.clientId]
+  );
+  const awaiting = useMemo(() => incoming.filter((s) => ACTIVE_STATUSES.has(s.status)), [incoming]);
+  const history = useMemo(() => incoming.filter((s) => DONE_STATUSES.has(s.status)), [incoming]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const positions = await getGpsPositions();
+        if (!cancelled) {
+          const map = {};
+          for (const p of positions) map[p.employeeId] = p;
+          setGpsPositions(map);
+        }
+      } catch {}
+    };
+    refresh();
+    const timer = setInterval(refresh, 15000);
+    return () => { cancelled = true; clearInterval(timer); };
+  }, []);
+
+  const courierFor = (shipment) => {
+    const employee = data.employees.find((e) => e.employeeType === "COURIER" && gpsPositions[e.id]);
+    if (!employee) return null;
+    const pos = gpsPositions[employee.id];
+    return { name: fullName(employee), lat: pos.lat, lng: pos.lng };
+  };
+
+  return (
+    <ViewTitle eyebrow={t("deliveries.eyebrow")} title={t("deliveries.title")} action={<IconButton onClick={onRefresh} icon={RefreshCw}>{t("common.refresh")}</IconButton>}>
+      <h3 className="section-label">{t("deliveries.awaiting")}</h3>
+      {awaiting.length === 0 ? (
+        <p className="muted">{t("deliveries.noAwaiting")}</p>
+      ) : (
+        <div className="delivery-cards">
+          {awaiting.map((shipment) => {
+            const stepIndex = STATUS_STEPS.indexOf(shipment.status);
+            const courier = courierFor(shipment);
+            return (
+              <div key={shipment.id} className="delivery-card panel">
+                <div className="delivery-card-header">
+                  <span className="delivery-id">#{shipment.id}</span>
+                  <span className={`status ${shipment.status}`}>{t(`labels.${shipment.status}`)}</span>
+                </div>
+                <div className="delivery-meta">
+                  <span>{t("deliveries.from")}: <strong>{clientName(data, shipment.senderClientId)}</strong></span>
+                  {shipment.deliveryType === "TO_ADDRESS" && shipment.deliveryAddress && (
+                    <span>{t("deliveries.destination")}: <strong>{shipment.deliveryAddress}</strong></span>
+                  )}
+                  {shipment.deliveryType === "TO_OFFICE" && shipment.destinationOfficeId && (
+                    <span>{t("deliveries.destination")}: <strong>{officeName(data, shipment.destinationOfficeId)}</strong></span>
+                  )}
+                  <span>{t("shipments.colDate")}: <strong>{shipment.sentDate}</strong></span>
+                </div>
+                <div className="status-stepper">
+                  {STATUS_STEPS.map((step, i) => {
+                    const labelKey = { REGISTERED: "stepRegistered", IN_TRANSIT: "stepTransit", DELIVERED: "stepDelivered" }[step];
+                    return (
+                      <div key={step} className={`step ${i <= stepIndex ? "done" : ""} ${i === stepIndex ? "active" : ""}`}>
+                        <div className="step-dot" />
+                        {i < STATUS_STEPS.length - 1 && <div className="step-line" />}
+                        <span className="step-label">{t(`deliveries.${labelKey}`)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {shipment.status === "IN_TRANSIT" && (
+                  <div className="courier-info">
+                    {courier ? (
+                      <span>{t("deliveries.courierAt")}: <strong>{courier.name}</strong> ({courier.lat.toFixed(4)}, {courier.lng.toFixed(4)})</span>
+                    ) : (
+                      <span className="muted">{t("deliveries.courierUnknown")}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <h3 className="section-label" style={{ marginTop: "2rem" }}>{t("deliveries.history")}</h3>
+      {history.length === 0 ? (
+        <p className="muted">{t("deliveries.noHistory")}</p>
+      ) : (
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>{t("deliveries.colId")}</th>
+                <th>{t("deliveries.colFrom")}</th>
+                <th>{t("deliveries.colStatus")}</th>
+                <th>{t("deliveries.colDate")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {history.map((shipment) => (
+                <tr key={shipment.id}>
+                  <td>#{shipment.id}</td>
+                  <td>{clientName(data, shipment.senderClientId)}</td>
+                  <td><span className={`status ${shipment.status}`}>{t(`labels.${shipment.status}`)}</span></td>
+                  <td>{shipment.sentDate}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </ViewTitle>
   );
 }
 

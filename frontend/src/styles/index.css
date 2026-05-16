@@ -129,6 +129,27 @@ dialog::backdrop { background: oklch(22% 0.018 238 / 44%); }
 .modal-content { display: grid; gap: 18px; padding: 22px; }
 .modal-title { font-size: 17px; font-weight: 800; margin: 0; }
 .modal-actions { display: flex; gap: 10px; }
+.section-label { font-size: 15px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 14px; }
+.muted { color: var(--muted); }
+.delivery-cards { display: grid; gap: 14px; }
+.delivery-card { display: grid; gap: 12px; }
+.delivery-card-header { display: flex; align-items: center; justify-content: space-between; }
+.delivery-id { font-size: 13px; font-weight: 800; color: var(--muted); }
+.delivery-meta { display: flex; flex-wrap: wrap; gap: 10px 24px; font-size: 14px; color: var(--muted); }
+.delivery-meta strong { color: var(--text); }
+.status-stepper { display: flex; align-items: flex-start; gap: 0; padding: 8px 0; }
+.step { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; }
+.step-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); background: var(--surface); z-index: 1; }
+.step.done .step-dot { border-color: oklch(55% 0.18 160); background: oklch(55% 0.18 160); }
+.step.active .step-dot { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 3px oklch(55% 0.18 250 / 20%); }
+.step-line { position: absolute; top: 7px; left: 50%; width: 100%; height: 2px; background: var(--line); z-index: 0; }
+.step.done .step-line { background: oklch(55% 0.18 160); }
+.step-label { margin-top: 6px; font-size: 11px; font-weight: 800; color: var(--muted); text-align: center; }
+.step.done .step-label, .step.active .step-label { color: var(--text); }
+.courier-info { font-size: 13px; padding: 8px 10px; background: var(--surface-strong); border-radius: 6px; color: var(--muted); }
+.courier-info strong { color: var(--text); }
+.error-popup { background: oklch(96% 0.04 30) !important; border: 1px solid oklch(72% 0.13 30) !important; }
+.error-popup button { color: oklch(32% 0.12 30); border-color: oklch(72% 0.13 30); }
 
 @media (max-width: 900px) {
   .topbar, .section-heading { flex-direction: column; align-items: stretch; }
