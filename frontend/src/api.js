@@ -89,6 +89,19 @@ export const deliverShipment = (id) => api(`${API_ENDPOINTS.resources.shipments}
   method: "PUT",
 });
 
+export const transitShipment = (id) => api(`${API_ENDPOINTS.resources.shipments}/${id}/transit`, {
+  method: "PUT",
+});
+
+export const cancelShipment = (id) => api(`${API_ENDPOINTS.resources.shipments}/${id}/cancel`, {
+  method: "PUT",
+});
+
+export const updateShipment = (id, payload) => api(`${API_ENDPOINTS.resources.shipments}/${id}`, {
+  method: "PUT",
+  body: JSON.stringify(payload),
+});
+
 export const deleteShipment = (id) => deleteResource("shipments", id);
 
 export const createUser = (user) => createResource("users", user);

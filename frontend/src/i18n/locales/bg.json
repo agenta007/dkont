@@ -35,6 +35,7 @@
     "myShipments": "Моите пратки (активни)",
     "myDeliveries": "История на доставките",
     "officeShipments": "Пратки в офиса",
+    "shipments": "Пратки",
     "navigation": "Навигация"
   },
   "auth": {
@@ -139,7 +140,13 @@
     "sortBy": "Сортирай по",
     "sortNone": "— без сортиране —",
     "sortAsc": "↑ Възходящо",
-    "sortDesc": "↓ Низходящо"
+    "sortDesc": "↓ Низходящо",
+    "editTitle": "Редактирай пратка",
+    "saveSuccess": "Пратката е обновена успешно.",
+    "saveError": "Грешка при обновяване: {{error}}",
+    "addSuccess": "Пратката е регистрирана успешно.",
+    "addError": "Грешка при регистриране: {{error}}",
+    "registeredBy": "Регистрирана от"
   },
   "companies": {
     "eyebrow": "Регистър",

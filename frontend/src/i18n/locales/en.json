@@ -35,6 +35,7 @@
     "myShipments": "My Shipments (active)",
     "myDeliveries": "Delivery History",
     "officeShipments": "Office Shipments",
+    "shipments": "Shipments",
     "navigation": "Navigation"
   },
   "auth": {
@@ -139,7 +140,13 @@
     "sortBy": "Sort by",
     "sortNone": "— no sort —",
     "sortAsc": "↑ Ascending",
-    "sortDesc": "↓ Descending"
+    "sortDesc": "↓ Descending",
+    "editTitle": "Edit shipment",
+    "saveSuccess": "Shipment updated successfully.",
+    "saveError": "Failed to update shipment: {{error}}",
+    "addSuccess": "Shipment registered successfully.",
+    "addError": "Failed to register shipment: {{error}}",
+    "registeredBy": "Registered by"
   },
   "companies": {
     "eyebrow": "Registry",

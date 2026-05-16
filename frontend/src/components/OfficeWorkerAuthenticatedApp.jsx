@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { BarChart3, ClipboardList, Truck } from "lucide-react";
 import { AuthenticatedShell } from "./AuthenticatedShell.jsx";
-import { Dashboard, OfficeReports, Shipments } from "./operations.jsx";
+import { Dashboard, OfficeReports, Shipments } from "./operations/index.js";
 
 export function OfficeWorkerAuthenticatedApp({ active, data, error, load, loginSuccess, logoutMessage, onLogout, session, setActive, setLoginSuccess, visibleShipments }) {
   const { t } = useTranslation();

@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { BarChart3, PackageSearch, Truck } from "lucide-react";
 import { AuthenticatedShell } from "./AuthenticatedShell.jsx";
-import { ClientDeliveries, Dashboard, Shipments } from "./operations.jsx";
+import { ClientDeliveries, Dashboard, Shipments } from "./operations/index.js";
 
 export function ClientAuthenticatedApp({ active, clientId, data, error, load, loginSuccess, logoutMessage, onLogout, session, setActive, setLoginSuccess, visibleShipments }) {
   const { t } = useTranslation();

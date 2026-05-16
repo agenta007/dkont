@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { BarChart3, Building2, CheckCircle2, ClipboardList, LayoutList, MapPinned, Users } from "lucide-react";
+import { BarChart3, Building2, CheckCircle2, ClipboardList, LayoutList, MapPinned, Truck, Users } from "lucide-react";
 import { AuthenticatedShell } from "./AuthenticatedShell.jsx";
-import { Clients, Companies, Dashboard, Employees, Offices, OfficeOverview, Reports } from "./operations.jsx";
+import { Clients, Companies, Dashboard, Employees, Offices, OfficeOverview, Reports, Shipments } from "./operations/index.js";
 
 export function AdminAuthenticatedApp({ active, data, error, load, loginSuccess, logoutMessage, onLogout, session, setActive, setLoginSuccess, visibleShipments }) {
   const navigate = useNavigate();
@@ -17,6 +17,7 @@ export function AdminAuthenticatedApp({ active, data, error, load, loginSuccess,
     ["officeOverview", t("nav.officeOverview"), LayoutList],
     ["employees", t("nav.employees"), ClipboardList],
     ["clients", t("nav.clients"), Users],
+    ["shipments", t("nav.shipments"), Truck],
     ["reports", t("nav.reports"), CheckCircle2],
   ];
 
@@ -41,6 +42,7 @@ export function AdminAuthenticatedApp({ active, data, error, load, loginSuccess,
       {active === "officeOverview" && <OfficeOverview data={data} shipments={visibleShipments} onRefresh={load} />}
       {active === "employees" && <Employees data={data} selectedCompanyId={data.companies[0]?.id ?? ""} onRefresh={load} />}
       {active === "clients" && <Clients data={data} selectedCompanyId={data.companies[0]?.id ?? ""} onRefresh={load} />}
+      {active === "shipments" && <Shipments data={data} shipments={visibleShipments} role={session.role} session={session} onRefresh={load} />}
       {active === "reports" && <Reports data={data} />}
     </AuthenticatedShell>
   );

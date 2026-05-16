@@ -102,6 +102,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         existing.setDeliveryAddress(updated.getDeliveryAddress());
         existing.setDestinationOffice(updated.getDestinationOffice());
         existing.setWeight(updated.getWeight());
+        existing.setDescription(updated.getDescription());
         existing.setPrice(calculatePrice(existing));
         return shipmentRepository.save(existing);
     }
