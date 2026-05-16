@@ -633,7 +633,7 @@ export function Offices({ data, selectedCompanyId, onRefresh }) {
   );
 }
 
-const REPORT_TABS = ["revenue", "employees", "clients", "shipments", "byEmployee", "undelivered", "bySender", "byReceiver"];
+const REPORT_TABS = ["revenue", "employees", "staff", "clients", "shipments", "byEmployee", "undelivered", "bySender", "byReceiver"];
 
 export function Reports({ data }) {
   const { t } = useTranslation();
@@ -753,6 +753,61 @@ export function Reports({ data }) {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {tab === "staff" && (
+        <div className="report-section">
+          <div className="report-section-header">
+            <h3>{t("reports.staffTitle")}</h3>
+            <CompanyBar />
+          </div>
+          {(() => {
+            const couriers = companyEmployees.filter((e) => e.employeeType === "COURIER");
+            const companyOffices = data.offices.filter((o) => o.companyId === cid);
+            return <>
+              <div className="metrics">
+                <Metric value={companyEmployees.length} label={t("reports.totalEmployees")} />
+                <Metric value={couriers.length} label={t("reports.totalCouriers")} />
+              </div>
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>{t("reports.colOffice")}</th>
+                      <th>{t("fields.city")}</th>
+                      <th>{t("reports.colOfficeWorkers")}</th>
+                      <th>{t("reports.colCouriers")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {companyOffices.map((office) => {
+                      const officeWorkers = companyEmployees.filter((e) => e.officeId === office.id && e.employeeType === "OFFICE_EMPLOYEE");
+                      const officeCouriers = companyEmployees.filter((e) => e.officeId === office.id && e.employeeType === "COURIER");
+                      return (
+                        <tr key={office.id}>
+                          <td>{office.address}</td>
+                          <td>{office.city}</td>
+                          <td>
+                            {officeWorkers.length > 0
+                              ? officeWorkers.map(fullName).join(", ")
+                              : <span className="muted">—</span>}
+                            <span className="staff-count">({officeWorkers.length})</span>
+                          </td>
+                          <td>
+                            {officeCouriers.length > 0
+                              ? officeCouriers.map(fullName).join(", ")
+                              : <span className="muted">—</span>}
+                            <span className="staff-count">({officeCouriers.length})</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>;
+          })()}
         </div>
       )}
 

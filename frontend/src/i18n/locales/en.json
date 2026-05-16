@@ -243,7 +243,12 @@
     "colPrice": "Price",
     "totalEmployees": "total employees",
     "totalClients": "total clients",
-    "noResults": "No records found."
+    "noResults": "No records found.",
+    "tabStaff": "Staff by office",
+    "staffTitle": "Employees by office",
+    "colOfficeWorkers": "Office workers",
+    "colCouriers": "Couriers",
+    "totalCouriers": "total couriers"
   },
   "live": {
     "eyebrow": "Live dashboard",

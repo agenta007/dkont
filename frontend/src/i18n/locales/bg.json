@@ -279,7 +279,12 @@
     "colPrice": "Цена",
     "totalEmployees": "общо служители",
     "totalClients": "общо клиенти",
-    "noResults": "Няма намерени записи."
+    "noResults": "Няма намерени записи.",
+    "tabStaff": "Персонал по офис",
+    "staffTitle": "Служители по офис",
+    "colOfficeWorkers": "Офис служители",
+    "colCouriers": "Куриери",
+    "totalCouriers": "общо куриери"
   },
   "live": {
     "eyebrow": "Live dashboard",
