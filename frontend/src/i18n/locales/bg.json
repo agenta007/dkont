@@ -43,7 +43,7 @@
     "login": "Вход",
     "loginSuccess": "Успешен вход",
     "loggedOut": "Успешен изход",
-    "serverOffline": "Server offline",
+    "serverOffline": "Сървърът е недостъпен",
     "serverOfflineMsg": "Backend server is unreachable. Check that it is running, then try again.",
     "closeWarning": "Close server offline warning"
   },

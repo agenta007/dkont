@@ -37,7 +37,9 @@ export const api = async (url, options = {}) => {
     const text = await response.text();
     let message = text;
     try { const j = JSON.parse(text); message = j.message || j.error || text; } catch {}
-    throw new Error(message);
+    const err = new Error(message);
+    err.status = response.status;
+    throw err;
   }
   if (response.status === 204) return null;
   return response.json();

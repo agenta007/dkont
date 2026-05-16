@@ -52,7 +52,7 @@ function AppRoutes() {
       await load();
       navigate("/");
     } catch (exception) {
-      if (exception.code === "SERVER_UNREACHABLE") {
+      if (exception.code === "SERVER_UNREACHABLE" || exception.status >= 500) {
         setServerOffline(true);
       } else {
         setError(exception.message);

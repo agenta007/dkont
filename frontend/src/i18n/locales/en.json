@@ -43,7 +43,7 @@
     "login": "Login",
     "loginSuccess": "Login successful",
     "loggedOut": "Logged out",
-    "serverOffline": "Server offline",
+    "serverOffline": "Server unreachable",
     "serverOfflineMsg": "Backend server is unreachable. Check that it is running, then try again.",
     "closeWarning": "Close server offline warning"
   },

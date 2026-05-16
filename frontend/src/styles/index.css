@@ -39,11 +39,6 @@ h3 { margin-bottom: 14px; font-size: 18px; }
 .login-panel { display: grid; width: min(100%, 460px); gap: 22px; }
 .login-logo { justify-self: center; width: min(220px, 64vw); aspect-ratio: 3 / 2; object-fit: contain; }
 .login-card { display: grid; gap: 14px; padding: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
-.offline-overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: oklch(25% 0.09 28 / 42%); }
-.offline-popup { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; width: min(100%, 460px); padding: 18px; color: oklch(98% 0.012 28); background: oklch(42% 0.18 28); border: 1px solid oklch(72% 0.17 30); border-radius: 8px; box-shadow: 0 24px 70px oklch(22% 0.018 238 / 28%); }
-.offline-popup h2 { font-size: 18px; line-height: 1.2; }
-.offline-popup p { margin-top: 4px; color: oklch(94% 0.035 28); line-height: 1.45; }
-.offline-close { width: 34px; min-height: 34px; padding: 0; background: oklch(31% 0.14 28); color: oklch(98% 0.012 28); border: 1px solid oklch(69% 0.16 30); }
 .shell { padding: 22px clamp(14px, 4vw, 54px) 48px; }
 .controls { justify-content: space-between; margin-bottom: 18px; }
 .company-select { display: flex; justify-content: flex-end; margin-bottom: 18px; }
