@@ -145,6 +145,19 @@ dialog::backdrop { background: oklch(22% 0.018 238 / 44%); }
 .courier-info strong { color: var(--text); }
 .error-popup { background: oklch(96% 0.04 30) !important; border: 1px solid oklch(72% 0.13 30) !important; }
 .error-popup button { color: oklch(32% 0.12 30); border-color: oklch(72% 0.13 30); }
+.office-context-badge { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface-strong); border: 1px solid var(--line); border-radius: 8px; font-size: 14px; margin-bottom: 10px; }
+.office-context-label { font-weight: 800; color: var(--muted); }
+.office-context-value { font-weight: 800; color: var(--text); }
+.office-context-phone { color: var(--muted); margin-left: auto; }
+.shipment-description { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shipment-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; padding: 12px 0 4px; }
+.shipment-filter-label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 800; color: var(--muted); min-width: 180px; }
+.shipment-filter-label select, .shipment-filter-label input { min-height: 36px; font-size: 14px; }
+.employee-edit-name { display: flex; gap: 6px; }
+.employee-edit-name input { min-width: 0; flex: 1; }
+.employee-list-wrap { display: grid; gap: 10px; }
+.employee-list-heading { font-size: 15px; font-weight: 800; margin: 0; }
+.employee-table-wrap { }
 .office-overview { display: grid; gap: 10px; }
 .office-overview-row { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
 .office-overview-header { width: 100%; display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: none; border: none; cursor: pointer; text-align: left; color: var(--text); }

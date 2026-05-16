@@ -41,6 +41,9 @@ public class Shipment {
     @JoinColumn(name = "destination_office_id")
     private Office destinationOffice;
 
+    @Column
+    private String description;
+
     @Column(nullable = false, precision = 10, scale = 3)
     private BigDecimal weight;
 
@@ -94,6 +97,8 @@ public class Shipment {
     @JsonProperty
     public void setDestinationOffice(Office destinationOffice) { this.destinationOffice = destinationOffice; }
     public Long getDestinationOfficeId() { return destinationOffice == null ? null : destinationOffice.getId(); }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
     public BigDecimal getWeight() { return weight; }
     public void setWeight(BigDecimal weight) { this.weight = weight; }
     public BigDecimal getPrice() { return price; }

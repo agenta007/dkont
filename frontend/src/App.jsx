@@ -100,7 +100,7 @@ function AppRoutes() {
       return data.shipments.filter((shipment) => shipment.courierId === Number(session.employeeId));
     }
     if (role === "EMPLOYEE") {
-      return data.shipments.filter((shipment) => shipment.sourceOfficeId === Number(session.officeId) || shipment.destinationOfficeId === Number(session.officeId));
+      return data.shipments;
     }
     return data.shipments;
   }, [data, role, clientId, session]);

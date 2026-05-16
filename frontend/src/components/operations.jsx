@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, PackagePlus, RefreshCw } from "lucide-react";
-import { changeUserRole, createEmployee, createResource, createShipment, createUser, deleteEmployee, deleteResource, deleteShipment, deliverShipment, getGpsPositions, updateClient, updateUser } from "../api.js";
+import { changeUserRole, createEmployee, createResource, createShipment, createUser, deleteEmployee, deleteResource, deleteShipment, deliverShipment, getGpsPositions, updateClient, updateEmployee, updateUser } from "../api.js";
 import { clientName, fullName, numericForm, officeName } from "../utils/logistics.js";
 import { Field } from "./Field.jsx";
 import { IconButton } from "./IconButton.jsx";
@@ -123,10 +123,12 @@ export function Dashboard({ data, visibleShipments, currentClient, currentOffice
   );
 }
 
-export function Shipments({ data, shipments, role, session, onRefresh }) {
+export function Shipments({ data, shipments, role, session, currentOffice, onRefresh }) {
   const { t } = useTranslation();
   const canCreateShipment = role === "EMPLOYEE" && session?.employeeType === "OFFICE_EMPLOYEE";
   const [deliveryType, setDeliveryType] = useState("TO_OFFICE");
+  const [filterOfficeId, setFilterOfficeId] = useState("");
+  const [searchId, setSearchId] = useState("");
 
   const registeringEmployee = data.employees.find((e) => e.id === Number(session.employeeId));
   const companyId = registeringEmployee?.companyId ?? data.companies[0]?.id;
@@ -146,6 +148,7 @@ export function Shipments({ data, shipments, role, session, onRefresh }) {
       registeredBy: { id: Number(session.employeeId) },
       deliveryType: values.deliveryType,
       weight: values.weight,
+      description: values.description || null,
     };
     if (values.deliveryType === "TO_OFFICE") {
       payload.destinationOffice = { id: values.destinationOfficeId };
@@ -157,6 +160,18 @@ export function Shipments({ data, shipments, role, session, onRefresh }) {
     setDeliveryType("TO_OFFICE");
     await onRefresh();
   };
+
+  const filteredShipments = useMemo(() => {
+    let result = shipments;
+    if (filterOfficeId) {
+      const oid = Number(filterOfficeId);
+      result = result.filter((s) => s.destinationOfficeId === oid || s.registeredByEmployeeId != null && data.employees.find((e) => e.id === s.registeredByEmployeeId)?.officeId === oid);
+    }
+    if (searchId.trim()) {
+      result = result.filter((s) => String(s.id).includes(searchId.trim()));
+    }
+    return result;
+  }, [shipments, filterOfficeId, searchId, data.employees]);
 
   const deliver = async (id) => {
     await deliverShipment(id);
@@ -170,6 +185,13 @@ export function Shipments({ data, shipments, role, session, onRefresh }) {
 
   return (
     <ViewTitle eyebrow={t("shipments.eyebrow")} title={t("shipments.title")}>
+      {canCreateShipment && currentOffice && (
+        <div className="office-context-badge">
+          <span className="office-context-label">{t("dashboard.infoOffice")}</span>
+          <span className="office-context-value">{currentOffice.address}{currentOffice.city ? `, ${currentOffice.city}` : ""}</span>
+          {currentOffice.phone && <span className="office-context-phone">{currentOffice.phone}</span>}
+        </div>
+      )}
       {canCreateShipment && (
         <form className="form-grid panel" onSubmit={saveShipment}>
           <ClientPicker name="senderClientId" label={t("shipments.sender")} clients={data.clients} onRefresh={onRefresh} />
@@ -194,10 +216,31 @@ export function Shipments({ data, shipments, role, session, onRefresh }) {
             <label className="wide">{t("shipments.address")}<input name="deliveryAddress" required /></label>
           )}
           <label>{t("shipments.weight")}<input name="weight" type="number" step="0.1" min="0.1" defaultValue="1.0" /></label>
+          <label className="wide">{t("shipments.description")}<input name="description" /></label>
           <button className="wide"><PackagePlus size={16} /> {t("shipments.add")}</button>
         </form>
       )}
-      <ShipmentTable data={data} shipments={shipments} role={role} onDeliver={deliver} onDelete={remove} />
+      <div className="shipment-filters">
+        <label className="shipment-filter-label">
+          {t("shipments.filterOffice")}
+          <select value={filterOfficeId} onChange={(e) => setFilterOfficeId(e.target.value)}>
+            <option value="">{t("shipments.filterAllOffices")}</option>
+            {data.offices.map((office) => (
+              <option key={office.id} value={office.id}>{office.address}, {office.city}</option>
+            ))}
+          </select>
+        </label>
+        <label className="shipment-filter-label">
+          {t("shipments.searchId")}
+          <input
+            type="search"
+            value={searchId}
+            onChange={(e) => setSearchId(e.target.value)}
+            placeholder="#"
+          />
+        </label>
+      </div>
+      <ShipmentTable data={data} shipments={filteredShipments} role={role} onDeliver={deliver} onDelete={remove} />
     </ViewTitle>
   );
 }
@@ -309,6 +352,8 @@ export function Employees({ data, selectedCompanyId, onRefresh }) {
   const [workerCompanyId, setWorkerCompanyId] = useState(Number(selectedCompanyId) || data.companies[0]?.id || "");
   const { message: roleToast, type: roleToastType, notify: showToast, dismiss: dismissToast } = useOverlayNotification();
   const companyOffices = data.offices.filter((office) => office.companyId === Number(workerCompanyId));
+  const [editingId, setEditingId] = useState(null);
+  const [editValues, setEditValues] = useState({});
 
   const submit = async (event) => {
     event.preventDefault();
@@ -341,6 +386,42 @@ export function Employees({ data, selectedCompanyId, onRefresh }) {
     await deleteEmployee(id);
     await onRefresh();
   };
+
+  const startEdit = (employee) => {
+    const user = data.users.find((u) => u.id === employee.userId);
+    setEditingId(employee.id);
+    setEditValues({
+      firstName: employee.firstName ?? "",
+      lastName: employee.lastName ?? "",
+      email: user?.email ?? "",
+      officeId: employee.officeId ?? "",
+      employeeType: employee.employeeType ?? "OFFICE_EMPLOYEE",
+    });
+  };
+
+  const saveEdit = async (employee) => {
+    try {
+      await updateUser(employee.userId, {
+        firstName: editValues.firstName,
+        lastName: editValues.lastName,
+        email: editValues.email,
+      });
+      await updateEmployee(employee.id, {
+        company: { id: employee.companyId },
+        office: { id: Number(editValues.officeId) },
+        user: { id: employee.userId },
+        employeeType: editValues.employeeType,
+      });
+      setEditingId(null);
+      await onRefresh();
+      showToast(t("employees.saveSuccess"), "success");
+    } catch (err) {
+      showToast(t("employees.saveError", { error: err.message }), "error");
+    }
+  };
+
+  const selectedCompany = data.companies.find((c) => c.id === Number(workerCompanyId));
+  const companyEmployees = data.employees.filter((e) => e.companyId === Number(workerCompanyId));
 
   return (
     <ViewTitle eyebrow={t("employees.eyebrow")} title={t("employees.title")}>
@@ -377,36 +458,74 @@ export function Employees({ data, selectedCompanyId, onRefresh }) {
           </label>
           <button className="wide">{t("employees.add")}</button>
         </form>
-        <div className="table-wrap">
-          <table>
-            <tbody>
-              {data.employees.map((employee) => {
-                const user = data.users.find((u) => u.id === employee.userId);
-                return (
-                  <tr key={employee.id}>
-                    <td>{fullName(employee)}</td>
-                    <td>{t(`labels.${employee.employeeType}`)}</td>
-                    <td>{officeName(data, employee.officeId)}</td>
-                    <td>
-                      <select
-                        value={user?.role ?? ""}
-                        onChange={async (e) => {
-                          await changeUserRole(employee.userId, e.target.value);
-                          await onRefresh();
-                          showToast(t("employees.roleUpdated", { name: fullName(employee) }));
-                        }}
-                      >
-                        <option value="ADMIN">{t("employees.roleAdmin")}</option>
-                        <option value="EMPLOYEE">{t("employees.roleEmployee")}</option>
-                        <option value="CLIENT">{t("employees.roleClient")}</option>
-                      </select>
-                    </td>
-                    <td><button className="secondary" onClick={() => remove(employee.id)}>{t("common.delete")}</button></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="employee-list-wrap">
+          <h3 className="employee-list-heading">{t("employees.listTitle", { company: selectedCompany?.name ?? "" })}</h3>
+          {companyEmployees.length === 0 ? (
+            <p className="muted">{t("employees.noEmployees")}</p>
+          ) : (
+          <div className="employee-table-wrap table-wrap">
+            <table>
+              <tbody>
+                {companyEmployees.map((employee) => {
+                  const user = data.users.find((u) => u.id === employee.userId);
+                  const isEditing = editingId === employee.id;
+                  const editOffices = data.offices.filter((o) => o.companyId === employee.companyId);
+                  return (
+                    <tr key={employee.id} className={isEditing ? "active-row" : ""}>
+                      <td>
+                        {isEditing ? (
+                          <div className="employee-edit-name">
+                            <input value={editValues.firstName} onChange={(e) => setEditValues((v) => ({ ...v, firstName: e.target.value }))} placeholder={t("employees.firstName")} />
+                            <input value={editValues.lastName} onChange={(e) => setEditValues((v) => ({ ...v, lastName: e.target.value }))} placeholder={t("employees.lastName")} />
+                          </div>
+                        ) : fullName(employee)}
+                      </td>
+                      <td>
+                        {isEditing ? (
+                          <select value={editValues.employeeType} onChange={(e) => setEditValues((v) => ({ ...v, employeeType: e.target.value }))}>
+                            <option value="OFFICE_EMPLOYEE">{t("employees.typeOffice")}</option>
+                            <option value="COURIER">{t("employees.typeCourier")}</option>
+                          </select>
+                        ) : t(`labels.${employee.employeeType}`)}
+                      </td>
+                      <td>
+                        {isEditing ? (
+                          <select value={editValues.officeId} onChange={(e) => setEditValues((v) => ({ ...v, officeId: e.target.value }))}>
+                            {editOffices.map((o) => <option key={o.id} value={o.id}>{o.address}</option>)}
+                          </select>
+                        ) : officeName(data, employee.officeId)}
+                      </td>
+                      <td>
+                        {isEditing ? (
+                          <input value={editValues.email} onChange={(e) => setEditValues((v) => ({ ...v, email: e.target.value }))} type="email" placeholder={t("employees.email")} />
+                        ) : (
+                          <select value={user?.role ?? ""} onChange={async (e) => { await changeUserRole(employee.userId, e.target.value); await onRefresh(); showToast(t("employees.roleUpdated", { name: fullName(employee) })); }}>
+                            <option value="ADMIN">{t("employees.roleAdmin")}</option>
+                            <option value="EMPLOYEE">{t("employees.roleEmployee")}</option>
+                            <option value="CLIENT">{t("employees.roleClient")}</option>
+                          </select>
+                        )}
+                      </td>
+                      <td className="actions">
+                        {isEditing ? (
+                          <>
+                            <button onClick={() => saveEdit(employee)}>{t("clients.save")}</button>
+                            <button className="secondary" onClick={() => setEditingId(null)}>{t("common.close")}</button>
+                          </>
+                        ) : (
+                          <>
+                            <button className="secondary" onClick={() => startEdit(employee)}>{t("common.edit")}</button>
+                            <button className="secondary" onClick={() => remove(employee.id)}>{t("common.delete")}</button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          )}
         </div>
       </div>
     </ViewTitle>
@@ -920,6 +1039,7 @@ function ShipmentTable({ data, shipments, role, onDeliver, onDelete }) {
             <th>{t("shipments.colSender")}</th>
             <th>{t("shipments.colReceiver")}</th>
             <th>{t("shipments.colType")}</th>
+            <th>{t("shipments.description")}</th>
             <th>{t("shipments.colPrice")}</th>
             <th>{t("shipments.colStatus")}</th>
             <th>{t("shipments.colDate")}</th>
@@ -933,6 +1053,7 @@ function ShipmentTable({ data, shipments, role, onDeliver, onDelete }) {
               <td>{clientName(data, shipment.senderClientId)}</td>
               <td>{clientName(data, shipment.receiverClientId)}</td>
               <td>{t(`labels.${shipment.deliveryType}`)}</td>
+              <td className="shipment-description">{shipment.description ?? <span className="muted">—</span>}</td>
               <td>{Number(shipment.price).toFixed(2)} {t("shipments.currency")}</td>
               <td><span className={`status ${shipment.status}`}>{t(`labels.${shipment.status}`)}</span></td>
               <td>{shipment.sentDate}</td>

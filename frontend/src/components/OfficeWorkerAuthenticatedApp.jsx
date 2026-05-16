@@ -28,7 +28,7 @@ export function OfficeWorkerAuthenticatedApp({ active, data, error, load, loginS
       tabs={officeWorkerTabs}
     >
       {active === "dashboard" && <Dashboard data={data} visibleShipments={visibleShipments} currentClient={null} currentOffice={currentOffice} session={session} onRefresh={load} />}
-      {active === "shipments" && <Shipments data={data} shipments={visibleShipments} role={session.role} session={session} onRefresh={load} />}
+      {active === "shipments" && <Shipments data={data} shipments={visibleShipments} role={session.role} session={session} currentOffice={currentOffice} onRefresh={load} />}
     </AuthenticatedShell>
   );
 }

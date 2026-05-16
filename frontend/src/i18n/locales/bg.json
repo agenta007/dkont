@@ -130,7 +130,11 @@
     "colStatus": "Статус",
     "colDate": "Дата",
     "markReceived": "Получена",
-    "currency": "лв."
+    "currency": "лв.",
+    "description": "Описание",
+    "filterOffice": "Офис",
+    "filterAllOffices": "Всички офиси",
+    "searchId": "Търси по номер"
   },
   "companies": {
     "eyebrow": "Регистър",
@@ -175,6 +179,11 @@
     "roleEmployee": "Служител",
     "roleClient": "Клиент",
     "roleUpdated": "Ролята на {{name}} е обновена.",
+    "listTitle": "Служители на {{company}}",
+    "noEmployees": "Компанията няма добавени служители.",
+    "editTitle": "Редактирай служител",
+    "saveSuccess": "Служителят е обновен успешно.",
+    "saveError": "Грешка при обновяване: {{error}}",
     "addSuccess": "Служителят е добавен успешно.",
     "addError": "Грешка при добавяне: {{error}}"
   },

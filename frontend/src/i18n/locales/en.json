@@ -130,7 +130,11 @@
     "colStatus": "Status",
     "colDate": "Date",
     "markReceived": "Received",
-    "currency": "BGN"
+    "currency": "BGN",
+    "description": "Description",
+    "filterOffice": "Office",
+    "filterAllOffices": "All offices",
+    "searchId": "Search by number"
   },
   "companies": {
     "eyebrow": "Registry",
@@ -175,6 +179,11 @@
     "roleEmployee": "Employee",
     "roleClient": "Client",
     "roleUpdated": "Role of {{name}} updated.",
+    "listTitle": "Employees of {{company}}",
+    "noEmployees": "This company has no employees yet.",
+    "editTitle": "Edit employee",
+    "saveSuccess": "Employee updated successfully.",
+    "saveError": "Failed to update employee: {{error}}",
     "addSuccess": "Employee added successfully.",
     "addError": "Failed to add employee: {{error}}"
   },

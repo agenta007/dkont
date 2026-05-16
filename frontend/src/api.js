@@ -95,6 +95,11 @@ export const createUser = (user) => createResource("users", user);
 
 export const createEmployee = (employee) => createResource("employees", employee);
 
+export const updateEmployee = (id, payload) => api(`${API_ENDPOINTS.resources.employees}/${id}`, {
+  method: "PUT",
+  body: JSON.stringify(payload),
+});
+
 export const deleteEmployee = (id) => deleteResource("employees", id);
 
 export const changeUserRole = (userId, role) =>
