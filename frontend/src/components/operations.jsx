@@ -426,16 +426,16 @@ export function Employees({ data, selectedCompanyId, onRefresh }) {
   return (
     <ViewTitle eyebrow={t("employees.eyebrow")} title={t("employees.title")}>
       <OverlayNotification message={roleToast} type={roleToastType} onDismiss={dismissToast} />
+      <label className="company-selector">
+        {t("employees.company")}
+        <select value={workerCompanyId} onChange={(event) => setWorkerCompanyId(Number(event.target.value))}>
+          {data.companies.map((company) => (
+            <option key={company.id} value={company.id}>{company.name}</option>
+          ))}
+        </select>
+      </label>
       <div className="split" style={{ gridTemplateColumns: "1fr" }}>
         <form className="form-grid panel" onSubmit={submit}>
-          <label>
-            {t("employees.company")}
-            <select name="companyId" value={workerCompanyId} onChange={(event) => setWorkerCompanyId(Number(event.target.value))} required>
-              {data.companies.map((company) => (
-                <option key={company.id} value={company.id}>{company.name}</option>
-              ))}
-            </select>
-          </label>
           <label>{t("employees.firstName")}<input name="firstName" required /></label>
           <label>{t("employees.lastName")}<input name="lastName" required /></label>
           <label>{t("employees.username")}<input name="username" required /></label>
@@ -595,7 +595,12 @@ export function Offices({ data, selectedCompanyId, onRefresh }) {
 export function Reports({ data }) {
   const { t } = useTranslation();
   const [dates, setDates] = useState({ from: "", to: "" });
+  const [reportCompanyId, setReportCompanyId] = useState(data.companies[0]?.id ?? "");
   const report = buildReport(data, dates);
+
+  const reportCompany = data.companies.find((c) => c.id === Number(reportCompanyId));
+  const companyEmployees = data.employees.filter((e) => e.companyId === Number(reportCompanyId));
+
   const loadReport = async (event) => {
     event.preventDefault();
     const payload = Object.fromEntries(new FormData(event.currentTarget));
@@ -616,6 +621,50 @@ export function Reports({ data }) {
           <Metric value={report.shipments.length} label={t("reports.total")} />
         </div>
       )}
+
+      <div className="report-section">
+        <div className="report-section-header">
+          <h3>{t("reports.employeesTitle")}{reportCompany ? ` — ${reportCompany.name}` : ""}</h3>
+          <label className="report-company-select">
+            {t("employees.company")}
+            <select value={reportCompanyId} onChange={(e) => setReportCompanyId(Number(e.target.value))}>
+              {data.companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </label>
+        </div>
+        <div className="metrics" style={{ marginBottom: "12px" }}>
+          <Metric value={companyEmployees.length} label={t("reports.totalEmployees")} />
+          <Metric value={companyEmployees.filter((e) => e.employeeType === "OFFICE_EMPLOYEE").length} label={t("labels.OFFICE_EMPLOYEE")} />
+          <Metric value={companyEmployees.filter((e) => e.employeeType === "COURIER").length} label={t("labels.COURIER")} />
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>{t("reports.colName")}</th>
+                <th>{t("reports.colType")}</th>
+                <th>{t("reports.colOffice")}</th>
+                <th>{t("reports.colEmail")}</th>
+                <th>{t("reports.colRole")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {companyEmployees.map((employee) => {
+                const user = data.users.find((u) => u.id === employee.userId);
+                return (
+                  <tr key={employee.id}>
+                    <td>{fullName(employee)}</td>
+                    <td><span className={`status ${employee.employeeType}`}>{t(`labels.${employee.employeeType}`)}</span></td>
+                    <td>{officeName(data, employee.officeId)}</td>
+                    <td>{employee.email ?? "—"}</td>
+                    <td>{user ? t(`labels.${user.role}`) : "—"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </ViewTitle>
   );
 }
