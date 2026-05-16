@@ -129,6 +129,8 @@ export function Shipments({ data, shipments, role, session, currentOffice, onRef
   const [deliveryType, setDeliveryType] = useState("TO_OFFICE");
   const [filterOfficeId, setFilterOfficeId] = useState("");
   const [searchId, setSearchId] = useState("");
+  const [sortField, setSortField] = useState("");
+  const [sortDir, setSortDir] = useState("asc");
 
   const registeringEmployee = data.employees.find((e) => e.id === Number(session.employeeId));
   const companyId = registeringEmployee?.companyId ?? data.companies[0]?.id;
@@ -170,8 +172,24 @@ export function Shipments({ data, shipments, role, session, currentOffice, onRef
     if (searchId.trim()) {
       result = result.filter((s) => String(s.id).includes(searchId.trim()));
     }
+    if (sortField) {
+      result = [...result].sort((a, b) => {
+        let av, bv;
+        if (sortField === "id") { av = a.id; bv = b.id; }
+        else if (sortField === "sender") { av = clientName(data, a.senderClientId); bv = clientName(data, b.senderClientId); }
+        else if (sortField === "receiver") { av = clientName(data, a.receiverClientId); bv = clientName(data, b.receiverClientId); }
+        else if (sortField === "price") { av = Number(a.price); bv = Number(b.price); }
+        else if (sortField === "weight") { av = Number(a.weight); bv = Number(b.weight); }
+        else if (sortField === "status") { av = a.status; bv = b.status; }
+        else if (sortField === "date") { av = a.sentDate; bv = b.sentDate; }
+        else if (sortField === "type") { av = a.deliveryType; bv = b.deliveryType; }
+        if (av == null) av = ""; if (bv == null) bv = "";
+        const cmp = typeof av === "number" ? av - bv : String(av).localeCompare(String(bv));
+        return sortDir === "asc" ? cmp : -cmp;
+      });
+    }
     return result;
-  }, [shipments, filterOfficeId, searchId, data.employees]);
+  }, [shipments, filterOfficeId, searchId, sortField, sortDir, data.employees, data.clients]);
 
   const deliver = async (id) => {
     await deliverShipment(id);
@@ -239,6 +257,29 @@ export function Shipments({ data, shipments, role, session, currentOffice, onRef
             placeholder="#"
           />
         </label>
+        <label className="shipment-filter-label">
+          {t("shipments.sortBy")}
+          <select value={sortField} onChange={(e) => setSortField(e.target.value)}>
+            <option value="">{t("shipments.sortNone")}</option>
+            <option value="id">{t("shipments.colId")}</option>
+            <option value="sender">{t("shipments.colSender")}</option>
+            <option value="receiver">{t("shipments.colReceiver")}</option>
+            <option value="type">{t("shipments.colType")}</option>
+            <option value="price">{t("shipments.colPrice")}</option>
+            <option value="weight">{t("shipments.weight")}</option>
+            <option value="status">{t("shipments.colStatus")}</option>
+            <option value="date">{t("shipments.colDate")}</option>
+          </select>
+        </label>
+        {sortField && (
+          <label className="shipment-filter-label">
+            <span>&nbsp;</span>
+            <select value={sortDir} onChange={(e) => setSortDir(e.target.value)}>
+              <option value="asc">{t("shipments.sortAsc")}</option>
+              <option value="desc">{t("shipments.sortDesc")}</option>
+            </select>
+          </label>
+        )}
       </div>
       <ShipmentTable data={data} shipments={filteredShipments} role={role} onDeliver={deliver} onDelete={remove} />
     </ViewTitle>
@@ -592,79 +633,252 @@ export function Offices({ data, selectedCompanyId, onRefresh }) {
   );
 }
 
+const REPORT_TABS = ["revenue", "employees", "clients", "shipments", "byEmployee", "undelivered", "bySender", "byReceiver"];
+
 export function Reports({ data }) {
   const { t } = useTranslation();
+  const [tab, setTab] = useState("revenue");
   const [dates, setDates] = useState({ from: "", to: "" });
   const [reportCompanyId, setReportCompanyId] = useState(data.companies[0]?.id ?? "");
+  const [filterEmployeeId, setFilterEmployeeId] = useState(data.employees[0]?.id ?? "");
+  const [filterClientId, setFilterClientId] = useState(data.clients[0]?.id ?? "");
   const report = buildReport(data, dates);
 
-  const reportCompany = data.companies.find((c) => c.id === Number(reportCompanyId));
-  const companyEmployees = data.employees.filter((e) => e.companyId === Number(reportCompanyId));
+  const cid = Number(reportCompanyId);
+  const companyEmployees = data.employees.filter((e) => e.companyId === cid);
+  const companyClients = data.clients;
+  const companyShipments = data.shipments.filter((s) => s.companyId === cid);
 
-  const loadReport = async (event) => {
+  const loadReport = (event) => {
     event.preventDefault();
-    const payload = Object.fromEntries(new FormData(event.currentTarget));
-    setDates(payload);
+    setDates(Object.fromEntries(new FormData(event.currentTarget)));
   };
+
+  const CompanyBar = () => (
+    <label className="report-company-select">
+      {t("employees.company")}
+      <select value={reportCompanyId} onChange={(e) => setReportCompanyId(Number(e.target.value))}>
+        {data.companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+      </select>
+    </label>
+  );
+
+  const ShipmentRows = ({ shipments }) => (
+    shipments.length === 0 ? <tr><td colSpan={7} className="muted">{t("reports.noResults")}</td></tr> :
+    shipments.map((s) => (
+      <tr key={s.id}>
+        <td>#{s.id}</td>
+        <td>{clientName(data, s.senderClientId)}</td>
+        <td>{clientName(data, s.receiverClientId)}</td>
+        <td>{s.weight} кг</td>
+        <td>{Number(s.price).toFixed(2)} {t("reports.currency")}</td>
+        <td><span className={`status ${s.status}`}>{t(`labels.${s.status}`)}</span></td>
+        <td>{s.sentDate}</td>
+      </tr>
+    ))
+  );
+
+  const shipmentHead = (
+    <tr>
+      <th>ID</th>
+      <th>{t("reports.colSender")}</th>
+      <th>{t("reports.colReceiver")}</th>
+      <th>{t("reports.colWeight")}</th>
+      <th>{t("reports.colPrice")}</th>
+      <th>{t("reports.colStatus")}</th>
+      <th>{t("reports.colDate")}</th>
+    </tr>
+  );
 
   return (
     <ViewTitle eyebrow={t("reports.eyebrow")} title={t("reports.title")}>
-      <form className="inline-form" onSubmit={loadReport}>
-        <label>{t("reports.from")}<input type="date" name="from" /></label>
-        <label>{t("reports.to")}<input type="date" name="to" /></label>
-        <button>{t("reports.calculate")}</button>
-      </form>
-      {report && (
-        <div className="metrics">
-          <Metric value={`${Number(report.revenue).toFixed(2)} ${t("reports.currency")}`} label={t("reports.revenue")} />
-          <Metric value={report.openShipments.length} label={t("reports.undelivered")} />
-          <Metric value={report.shipments.length} label={t("reports.total")} />
+      <nav className="report-tabs">
+        {REPORT_TABS.map((key) => (
+          <button key={key} type="button" className={tab === key ? "active" : ""} onClick={() => setTab(key)}>
+            {t(`reports.tab${key.charAt(0).toUpperCase() + key.slice(1)}`)}
+          </button>
+        ))}
+      </nav>
+
+      {tab === "revenue" && (
+        <div className="report-section">
+          <form className="inline-form" onSubmit={loadReport}>
+            <label>{t("reports.from")}<input type="date" name="from" /></label>
+            <label>{t("reports.to")}<input type="date" name="to" /></label>
+            <button>{t("reports.calculate")}</button>
+          </form>
+          {report && (
+            <div className="metrics">
+              <Metric value={`${Number(report.revenue).toFixed(2)} ${t("reports.currency")}`} label={t("reports.revenue")} />
+              <Metric value={report.openShipments.length} label={t("reports.undelivered")} />
+              <Metric value={report.shipments.length} label={t("reports.total")} />
+            </div>
+          )}
         </div>
       )}
 
-      <div className="report-section">
-        <div className="report-section-header">
-          <h3>{t("reports.employeesTitle")}{reportCompany ? ` — ${reportCompany.name}` : ""}</h3>
-          <label className="report-company-select">
-            {t("employees.company")}
-            <select value={reportCompanyId} onChange={(e) => setReportCompanyId(Number(e.target.value))}>
-              {data.companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </label>
-        </div>
-        <div className="metrics" style={{ marginBottom: "12px" }}>
-          <Metric value={companyEmployees.length} label={t("reports.totalEmployees")} />
-          <Metric value={companyEmployees.filter((e) => e.employeeType === "OFFICE_EMPLOYEE").length} label={t("labels.OFFICE_EMPLOYEE")} />
-          <Metric value={companyEmployees.filter((e) => e.employeeType === "COURIER").length} label={t("labels.COURIER")} />
-        </div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
+      {tab === "employees" && (
+        <div className="report-section">
+          <div className="report-section-header">
+            <h3>{t("reports.employeesTitle")}</h3>
+            <CompanyBar />
+          </div>
+          <div className="metrics">
+            <Metric value={companyEmployees.length} label={t("reports.totalEmployees")} />
+            <Metric value={companyEmployees.filter((e) => e.employeeType === "OFFICE_EMPLOYEE").length} label={t("labels.OFFICE_EMPLOYEE")} />
+            <Metric value={companyEmployees.filter((e) => e.employeeType === "COURIER").length} label={t("labels.COURIER")} />
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead><tr>
                 <th>{t("reports.colName")}</th>
                 <th>{t("reports.colType")}</th>
                 <th>{t("reports.colOffice")}</th>
                 <th>{t("reports.colEmail")}</th>
                 <th>{t("reports.colRole")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {companyEmployees.map((employee) => {
-                const user = data.users.find((u) => u.id === employee.userId);
-                return (
-                  <tr key={employee.id}>
-                    <td>{fullName(employee)}</td>
-                    <td><span className={`status ${employee.employeeType}`}>{t(`labels.${employee.employeeType}`)}</span></td>
-                    <td>{officeName(data, employee.officeId)}</td>
-                    <td>{employee.email ?? "—"}</td>
-                    <td>{user ? t(`labels.${user.role}`) : "—"}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+              </tr></thead>
+              <tbody>
+                {companyEmployees.map((e) => {
+                  const user = data.users.find((u) => u.id === e.userId);
+                  return (
+                    <tr key={e.id}>
+                      <td>{fullName(e)}</td>
+                      <td><span className={`status ${e.employeeType}`}>{t(`labels.${e.employeeType}`)}</span></td>
+                      <td>{officeName(data, e.officeId)}</td>
+                      <td>{e.email ?? "—"}</td>
+                      <td>{user ? t(`labels.${user.role}`) : "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
+
+      {tab === "clients" && (
+        <div className="report-section">
+          <div className="report-section-header">
+            <h3>{t("reports.clientsTitle")}</h3>
+          </div>
+          <div className="metrics">
+            <Metric value={companyClients.length} label={t("reports.totalClients")} />
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead><tr>
+                <th>{t("reports.colName")}</th>
+                <th>{t("reports.colEmail")}</th>
+                <th>{t("reports.colPhone")}</th>
+              </tr></thead>
+              <tbody>
+                {companyClients.length === 0
+                  ? <tr><td colSpan={3} className="muted">{t("reports.noResults")}</td></tr>
+                  : companyClients.map((c) => (
+                    <tr key={c.id}>
+                      <td>{fullName(c)}</td>
+                      <td>{c.email ?? "—"}</td>
+                      <td>{c.phone ?? "—"}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {tab === "shipments" && (
+        <div className="report-section">
+          <div className="report-section-header">
+            <h3>{t("reports.shipmentsTitle")}</h3>
+            <CompanyBar />
+          </div>
+          <div className="metrics">
+            <Metric value={companyShipments.length} label={t("reports.total")} />
+            <Metric value={companyShipments.filter((s) => !["DELIVERED","CANCELLED"].includes(s.status)).length} label={t("reports.undelivered")} />
+          </div>
+          <div className="table-wrap"><table><thead>{shipmentHead}</thead><tbody><ShipmentRows shipments={companyShipments} /></tbody></table></div>
+        </div>
+      )}
+
+      {tab === "byEmployee" && (
+        <div className="report-section">
+          <div className="report-section-header">
+            <h3>{t("reports.byEmployeeTitle")}</h3>
+            <label className="report-company-select">
+              {t("reports.selectEmployee")}
+              <select value={filterEmployeeId} onChange={(e) => setFilterEmployeeId(Number(e.target.value))}>
+                {data.employees.map((e) => <option key={e.id} value={e.id}>{fullName(e)}</option>)}
+              </select>
+            </label>
+          </div>
+          {(() => {
+            const rows = data.shipments.filter((s) => s.registeredByEmployeeId === Number(filterEmployeeId));
+            return <>
+              <div className="metrics"><Metric value={rows.length} label={t("reports.total")} /></div>
+              <div className="table-wrap"><table><thead>{shipmentHead}</thead><tbody><ShipmentRows shipments={rows} /></tbody></table></div>
+            </>;
+          })()}
+        </div>
+      )}
+
+      {tab === "undelivered" && (
+        <div className="report-section">
+          <div className="report-section-header">
+            <h3>{t("reports.undeliveredTitle")}</h3>
+            <CompanyBar />
+          </div>
+          {(() => {
+            const rows = companyShipments.filter((s) => !["DELIVERED","CANCELLED"].includes(s.status));
+            return <>
+              <div className="metrics"><Metric value={rows.length} label={t("reports.undelivered")} /></div>
+              <div className="table-wrap"><table><thead>{shipmentHead}</thead><tbody><ShipmentRows shipments={rows} /></tbody></table></div>
+            </>;
+          })()}
+        </div>
+      )}
+
+      {tab === "bySender" && (
+        <div className="report-section">
+          <div className="report-section-header">
+            <h3>{t("reports.bySenderTitle")}</h3>
+            <label className="report-company-select">
+              {t("reports.selectClient")}
+              <select value={filterClientId} onChange={(e) => setFilterClientId(Number(e.target.value))}>
+                {data.clients.map((c) => <option key={c.id} value={c.id}>{fullName(c)}</option>)}
+              </select>
+            </label>
+          </div>
+          {(() => {
+            const rows = data.shipments.filter((s) => s.senderClientId === Number(filterClientId));
+            return <>
+              <div className="metrics"><Metric value={rows.length} label={t("reports.total")} /></div>
+              <div className="table-wrap"><table><thead>{shipmentHead}</thead><tbody><ShipmentRows shipments={rows} /></tbody></table></div>
+            </>;
+          })()}
+        </div>
+      )}
+
+      {tab === "byReceiver" && (
+        <div className="report-section">
+          <div className="report-section-header">
+            <h3>{t("reports.byReceiverTitle")}</h3>
+            <label className="report-company-select">
+              {t("reports.selectClient")}
+              <select value={filterClientId} onChange={(e) => setFilterClientId(Number(e.target.value))}>
+                {data.clients.map((c) => <option key={c.id} value={c.id}>{fullName(c)}</option>)}
+              </select>
+            </label>
+          </div>
+          {(() => {
+            const rows = data.shipments.filter((s) => s.receiverClientId === Number(filterClientId));
+            return <>
+              <div className="metrics"><Metric value={rows.length} label={t("reports.total")} /></div>
+              <div className="table-wrap"><table><thead>{shipmentHead}</thead><tbody><ShipmentRows shipments={rows} /></tbody></table></div>
+            </>;
+          })()}
+        </div>
+      )}
     </ViewTitle>
   );
 }
@@ -1035,6 +1249,92 @@ export function ClientDeliveries({ data, shipments, session, onRefresh }) {
   );
 }
 
+export function OfficeReports({ data, shipments }) {
+  const { t } = useTranslation();
+  const [tab, setTab] = useState("bySender");
+  const [clientId, setClientId] = useState(data.clients[0]?.id ?? "");
+
+  const clientSelect = (
+    <label className="report-company-select">
+      {t("reports.selectClient")}
+      <select value={clientId} onChange={(e) => setClientId(Number(e.target.value))}>
+        {data.clients.map((c) => <option key={c.id} value={c.id}>{fullName(c)}</option>)}
+      </select>
+    </label>
+  );
+
+  const sentRows = shipments.filter((s) => s.senderClientId === Number(clientId));
+  const receivedRows = shipments.filter((s) => s.receiverClientId === Number(clientId));
+
+  const ShipmentRows = ({ rows }) =>
+    rows.length === 0 ? (
+      <tr><td colSpan={6} className="muted">{t("reports.noResults")}</td></tr>
+    ) : rows.map((s) => (
+      <tr key={s.id}>
+        <td>#{s.id}</td>
+        <td>{clientName(data, s.senderClientId)}</td>
+        <td>{clientName(data, s.receiverClientId)}</td>
+        <td>{Number(s.price).toFixed(2)} {t("shipments.currency")}</td>
+        <td><span className={`status ${s.status}`}>{t(`labels.${s.status}`)}</span></td>
+        <td>{s.sentDate}</td>
+      </tr>
+    ));
+
+  const thead = (
+    <tr>
+      <th>ID</th>
+      <th>{t("reports.colSender")}</th>
+      <th>{t("reports.colReceiver")}</th>
+      <th>{t("reports.colPrice")}</th>
+      <th>{t("reports.colStatus")}</th>
+      <th>{t("reports.colDate")}</th>
+    </tr>
+  );
+
+  return (
+    <ViewTitle eyebrow={t("reports.eyebrow")} title={t("reports.officeReportsTitle")}>
+      <nav className="report-tabs">
+        <button type="button" className={tab === "bySender" ? "active" : ""} onClick={() => setTab("bySender")}>
+          {t("reports.bySenderTitle")}
+        </button>
+        <button type="button" className={tab === "byReceiver" ? "active" : ""} onClick={() => setTab("byReceiver")}>
+          {t("reports.byReceiverTitle")}
+        </button>
+      </nav>
+
+      {tab === "bySender" && (
+        <div className="report-section">
+          <div className="report-section-header">
+            <h3>{t("reports.bySenderTitle")}</h3>
+            {clientSelect}
+          </div>
+          <div className="metrics">
+            <Metric value={sentRows.length} label={t("reports.total")} />
+          </div>
+          <div className="table-wrap">
+            <table><thead>{thead}</thead><tbody><ShipmentRows rows={sentRows} /></tbody></table>
+          </div>
+        </div>
+      )}
+
+      {tab === "byReceiver" && (
+        <div className="report-section">
+          <div className="report-section-header">
+            <h3>{t("reports.byReceiverTitle")}</h3>
+            {clientSelect}
+          </div>
+          <div className="metrics">
+            <Metric value={receivedRows.length} label={t("reports.total")} />
+          </div>
+          <div className="table-wrap">
+            <table><thead>{thead}</thead><tbody><ShipmentRows rows={receivedRows} /></tbody></table>
+          </div>
+        </div>
+      )}
+    </ViewTitle>
+  );
+}
+
 function CrudView({ eyebrow, title, endpoint, fields, data, renderRow, onRefresh, extra = {}, addLabel, stacked = false, onNotify, addSuccess, addError }) {
   const { t } = useTranslation();
   const submit = async (event) => {
@@ -1088,6 +1388,7 @@ function ShipmentTable({ data, shipments, role, onDeliver, onDelete }) {
             <th>{t("shipments.colSender")}</th>
             <th>{t("shipments.colReceiver")}</th>
             <th>{t("shipments.colType")}</th>
+            <th>{t("shipments.colDestination")}</th>
             <th>{t("shipments.description")}</th>
             <th>{t("shipments.colPrice")}</th>
             <th>{t("shipments.colStatus")}</th>
@@ -1096,12 +1397,17 @@ function ShipmentTable({ data, shipments, role, onDeliver, onDelete }) {
           </tr>
         </thead>
         <tbody>
-          {shipments.map((shipment) => (
+          {shipments.map((shipment) => {
+            const destination = shipment.deliveryType === "TO_OFFICE"
+              ? officeName(data, shipment.destinationOfficeId)
+              : (shipment.deliveryAddress ?? <span className="muted">—</span>);
+            return (
             <tr key={shipment.id}>
               <td>{shipment.id}</td>
               <td>{clientName(data, shipment.senderClientId)}</td>
               <td>{clientName(data, shipment.receiverClientId)}</td>
               <td>{t(`labels.${shipment.deliveryType}`)}</td>
+              <td className="shipment-destination">{destination}</td>
               <td className="shipment-description">{shipment.description ?? <span className="muted">—</span>}</td>
               <td>{Number(shipment.price).toFixed(2)} {t("shipments.currency")}</td>
               <td><span className={`status ${shipment.status}`}>{t(`labels.${shipment.status}`)}</span></td>
@@ -1111,7 +1417,8 @@ function ShipmentTable({ data, shipments, role, onDeliver, onDelete }) {
                 {role !== "CLIENT" && <button className="secondary" onClick={() => onDelete(shipment.id)}>{t("common.delete")}</button>}
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

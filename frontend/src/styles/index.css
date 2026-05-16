@@ -149,11 +149,15 @@ dialog::backdrop { background: oklch(22% 0.018 238 / 44%); }
 .office-context-label { font-weight: 800; color: var(--muted); }
 .office-context-value { font-weight: 800; color: var(--text); }
 .office-context-phone { color: var(--muted); margin-left: auto; }
+.shipment-destination { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--muted); }
 .shipment-description { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .shipment-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; padding: 12px 0 4px; }
 .shipment-filter-label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 800; color: var(--muted); min-width: 180px; }
 .shipment-filter-label select, .shipment-filter-label input { min-height: 36px; font-size: 14px; }
-.report-section { margin-top: 28px; display: grid; gap: 14px; }
+.report-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+.report-tabs button { min-height: 32px; padding: 4px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-strong); color: var(--muted); font-weight: 800; font-size: 13px; }
+.report-tabs button.active { background: var(--text); color: var(--surface); border-color: var(--text); }
+.report-section { display: grid; gap: 14px; }
 .report-section-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 .report-section-header h3 { margin: 0; }
 .report-company-select { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; color: var(--muted); }

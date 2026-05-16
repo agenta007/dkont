@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
-import { BarChart3, Truck } from "lucide-react";
+import { BarChart3, ClipboardList, Truck } from "lucide-react";
 import { AuthenticatedShell } from "./AuthenticatedShell.jsx";
-import { Dashboard, Shipments } from "./operations.jsx";
+import { Dashboard, OfficeReports, Shipments } from "./operations.jsx";
 
 export function OfficeWorkerAuthenticatedApp({ active, data, error, load, loginSuccess, logoutMessage, onLogout, session, setActive, setLoginSuccess, visibleShipments }) {
   const { t } = useTranslation();
@@ -11,6 +11,7 @@ export function OfficeWorkerAuthenticatedApp({ active, data, error, load, loginS
   const officeWorkerTabs = [
     ["dashboard", t("nav.dashboard"), BarChart3],
     ["shipments", t("nav.officeShipments"), Truck],
+    ["reports", t("nav.reports"), ClipboardList],
   ];
 
   return (
@@ -29,6 +30,7 @@ export function OfficeWorkerAuthenticatedApp({ active, data, error, load, loginS
     >
       {active === "dashboard" && <Dashboard data={data} visibleShipments={visibleShipments} currentClient={null} currentOffice={currentOffice} session={session} onRefresh={load} />}
       {active === "shipments" && <Shipments data={data} shipments={visibleShipments} role={session.role} session={session} currentOffice={currentOffice} onRefresh={load} />}
+      {active === "reports" && <OfficeReports data={data} shipments={visibleShipments} />}
     </AuthenticatedShell>
   );
 }
